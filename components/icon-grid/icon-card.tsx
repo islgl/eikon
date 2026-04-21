@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
-import { Copy, Heart, Trash2, Info, Download, Link } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { useDraggable } from '@dnd-kit/core'
+import { Copy, Heart, Trash2, Info, Download, Link, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Icon } from '@/types'
 import { cn } from '@/lib/utils'
 import { copyToClipboard, downloadSvg, downloadPng } from '@/lib/utils/copy'
 import { isRasterWrappedSvg } from '@/lib/utils/svg'
-import { toggleFavorite, deleteIcons, getIconSignedUrl } from '@/actions/icons'
+import { toggleFavorite, deleteIcons, getIconSignedUrl, updateIcon } from '@/actions/icons'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
   ContextMenu,
@@ -29,9 +30,35 @@ type IconCardProps = {
 }
 
 export function IconCard({ icon, size, selected, active, onSelect, onOpenDetail, onUpdate, onRemove }: IconCardProps) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: icon.id,
+    data: { name: icon.name, svgContent: icon.svg_content },
+  })
+
   const [hovered, setHovered] = useState(false)
+  const [renaming, setRenaming] = useState(false)
+  const [draftName, setDraftName] = useState(icon.name)
+  const inputRef = useRef<HTMLInputElement>(null)
   const cardSize = size + 48
   const isRaster = isRasterWrappedSvg(icon.svg_content)
+
+  function startRename() {
+    setDraftName(icon.name)
+    setRenaming(true)
+    setTimeout(() => { inputRef.current?.select() }, 30)
+  }
+
+  async function commitRename() {
+    setRenaming(false)
+    const name = draftName.trim()
+    if (!name || name === icon.name) { setDraftName(icon.name); return }
+    onUpdate({ name })
+    await updateIcon(icon.id, { name }).catch(() => {
+      onUpdate({ name: icon.name })
+      setDraftName(icon.name)
+      toast.error('Failed to rename')
+    })
+  }
 
   async function handleCopy(e: React.MouseEvent) {
     e.stopPropagation()
@@ -68,17 +95,23 @@ export function IconCard({ icon, size, selected, active, onSelect, onOpenDetail,
   }
 
   return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={{ width: cardSize, height: cardSize, opacity: isDragging ? 0.3 : 1 }}
+      className="shrink-0"
+    >
     <ContextMenu>
       <ContextMenuTrigger
         className={cn(
-          'relative flex flex-col items-center rounded-md cursor-pointer group border transition-all duration-150 shrink-0 overflow-hidden',
+          'relative flex flex-col items-center rounded-md cursor-pointer group border transition-all duration-150 overflow-hidden w-full h-full',
           selected
             ? 'border-primary bg-primary/8 ring-1 ring-primary/30'
             : active
               ? 'border-border bg-accent'
               : 'border-transparent bg-transparent hover:border-border hover:bg-accent/50'
         )}
-        style={{ width: cardSize, height: cardSize }}
         onClick={(e) => onSelect(e.metaKey || e.ctrlKey || e.shiftKey)}
         onDoubleClick={onOpenDetail}
         onMouseEnter={() => setHovered(true)}
@@ -98,9 +131,26 @@ export function IconCard({ icon, size, selected, active, onSelect, onOpenDetail,
 
         {/* Name label */}
         <div className="w-full px-1.5 pt-1 pb-2 text-center shrink-0">
-          <span className="text-[10px] text-muted-foreground truncate block leading-none">
-            {icon.name}
-          </span>
+          {renaming ? (
+            <input
+              ref={inputRef}
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+              onBlur={commitRename}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { e.preventDefault(); commitRename() }
+                if (e.key === 'Escape') { setRenaming(false); setDraftName(icon.name) }
+                e.stopPropagation()
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full bg-background border border-primary rounded px-1 text-[10px] text-center outline-none leading-none py-0.5"
+              autoFocus
+            />
+          ) : (
+            <span className="text-[10px] text-muted-foreground truncate block leading-none">
+              {icon.name}
+            </span>
+          )}
         </div>
 
         {/* Action buttons */}
@@ -171,6 +221,9 @@ export function IconCard({ icon, size, selected, active, onSelect, onOpenDetail,
           <Download className="h-3.5 w-3.5 mr-2" /> Download PNG (64px)
         </ContextMenuItem>
         <ContextMenuSeparator />
+        <ContextMenuItem onClick={startRename}>
+          <Pencil className="h-3.5 w-3.5 mr-2" /> Rename
+        </ContextMenuItem>
         <ContextMenuItem onClick={onOpenDetail}>
           <Info className="h-3.5 w-3.5 mr-2" /> View details
         </ContextMenuItem>
@@ -180,5 +233,6 @@ export function IconCard({ icon, size, selected, active, onSelect, onOpenDetail,
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
+    </div>
   )
 }

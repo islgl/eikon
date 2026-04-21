@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useDroppable } from '@dnd-kit/core'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -45,6 +46,7 @@ export function CollectionItem({
 }: CollectionItemProps) {
   const pathname = usePathname()
   const [editing, setEditing] = useState(false)
+  const { setNodeRef: setDropRef, isOver } = useDroppable({ id: `collection:${collection.id}` })
   const [name, setName] = useState(collection.name)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -61,7 +63,9 @@ export function CollectionItem({
     'group relative flex items-center h-7 px-1.5 rounded-md text-sm transition-colors',
     isActive
       ? 'bg-accent text-accent-foreground'
-      : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
+      : isOver
+        ? 'bg-primary/15 text-foreground ring-1 ring-primary/40'
+        : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
   )
 
   async function handleRename() {
@@ -92,7 +96,7 @@ export function CollectionItem({
 
   return (
     <Tooltip>
-      <TooltipTrigger render={<div className={itemClass} />}>
+      <TooltipTrigger render={<div ref={setDropRef} className={itemClass} />}>
         {/* Expand toggle */}
         {hasChildren ? (
           <button

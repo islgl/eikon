@@ -1,8 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Icon, Tag } from '@/types'
 import { useIcons } from '@/lib/hooks/use-icons'
+import { useDndMove } from '@/lib/hooks/use-dnd-move'
+import { moveIcons } from '@/actions/icons'
 import { IconToolbar } from './icon-toolbar'
 import { IconGrid } from './icon-grid'
 import { EmptyDropzone } from './empty-dropzone'
@@ -23,6 +25,14 @@ export function LibraryView({ icons: initialIcons, collectionId, title }: Librar
   const [importOpen, setImportOpen] = useState(false)
 
   const iconState = useIcons({ initialIcons, collectionId })
+  const { register } = useDndMove()
+
+  useEffect(() => {
+    register(async (iconIds, targetCollectionId) => {
+      iconState.removeIcons(iconIds)
+      await moveIcons(iconIds, targetCollectionId)
+    })
+  }, [register, iconState.removeIcons])
 
   const detailIcon = detailIconId
     ? iconState.filteredIcons.find((i) => i.id === detailIconId) ?? null

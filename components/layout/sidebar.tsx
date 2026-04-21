@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useDroppable } from '@dnd-kit/core'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { User } from '@supabase/supabase-js'
 import type { Tag } from '@/types'
@@ -108,6 +109,7 @@ export function Sidebar({ open, onToggle, collectionState, tags, user, onOpenCom
             href="/library"
             active={pathname === '/library'}
             open={open}
+            dropId="collection:null"
           />
           <SidebarLink
             icon={<Heart className="h-4 w-4" />}
@@ -224,39 +226,47 @@ function SidebarLink({
   href,
   active,
   open,
+  dropId,
 }: {
   icon: React.ReactNode
   label: string
   href: string
   active: boolean
   open: boolean
+  dropId?: string
 }) {
+  const { setNodeRef, isOver } = useDroppable({ id: dropId ?? `__no_drop_${label}`, disabled: !dropId })
+
   const linkClass = cn(
-    'flex items-center gap-2 h-7 px-1.5 rounded-md text-sm transition-colors',
+    'flex items-center gap-2 h-7 px-1.5 rounded-md text-sm transition-colors w-full',
     active
       ? 'bg-accent text-accent-foreground font-medium'
-      : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
+      : isOver
+        ? 'bg-primary/15 text-foreground ring-1 ring-primary/40'
+        : 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
   )
 
   return (
-    <Tooltip>
-      <TooltipTrigger render={<Link href={href} className={linkClass} />}>
-        <span className="shrink-0">{icon}</span>
-        <AnimatePresence>
-          {open && (
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="truncate"
-            >
-              {label}
-            </motion.span>
-          )}
-        </AnimatePresence>
-      </TooltipTrigger>
-      {!open && <TooltipContent side="right">{label}</TooltipContent>}
-    </Tooltip>
+    <div ref={setNodeRef}>
+      <Tooltip>
+        <TooltipTrigger render={<Link href={href} className={linkClass} />}>
+          <span className="shrink-0">{icon}</span>
+          <AnimatePresence>
+            {open && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="truncate"
+              >
+                {label}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </TooltipTrigger>
+        {!open && <TooltipContent side="right">{label}</TooltipContent>}
+      </Tooltip>
+    </div>
   )
 }
 
