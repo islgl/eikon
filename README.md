@@ -1,36 +1,123 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Eikon
 
-## Getting Started
+A personal icon manager built with Next.js and Supabase. Import, organize, and export icons in any format.
 
-First, run the development server:
+**Live demo:** [eikon.lglgl.me](https://eikon.lglgl.me)
+
+## Features
+
+- **Import anything** — SVG, PNG, JPG, WebP, GIF, ICO, ICNS; drag-and-drop or URL
+- **Collections** — nested folders with emoji/color, drag icons between them
+- **Search & filter** — fuzzy search, tag filtering, sort by name or date
+- **Export** — copy as SVG, JSX component, or Data URI; download SVG or PNG at any size
+- **Copy URL** — generates a signed Supabase Storage URL (7-day validity)
+- **Favorites** — quick access to frequently used icons
+- **Keyboard shortcuts** — ⌘K command palette for navigation
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 16 (App Router, Server Actions) |
+| Database & Auth | Supabase (Postgres, Auth, Storage) |
+| UI | Base UI, Tailwind CSS, Framer Motion |
+| Drag & Drop | @dnd-kit |
+| Deployment | Vercel |
+
+## Self-Hosting
+
+### Prerequisites
+
+- Node.js 20+
+- A [Supabase](https://supabase.com) project
+- (Optional) A [Vercel](https://vercel.com) account for deployment
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/islgl/eikon.git
+cd eikon
+npm install
+```
+
+### 2. Configure environment
+
+Copy the example file and fill in your Supabase credentials:
+
+```bash
+cp .env.local.example .env.local
+```
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Optional: restrict access to specific emails (comma-separated)
+ALLOWED_EMAILS=you@example.com
+```
+
+Find these values in your Supabase project under **Settings → API**.
+
+### 3. Initialize the database
+
+Run the migration in your Supabase **SQL Editor**:
+
+```bash
+# Contents of supabase/migrations/0001_init.sql
+```
+
+Or paste the file contents directly into the SQL Editor.
+
+This creates the `collections`, `icons`, `tags`, and `icon_tags` tables with RLS policies.
+
+### 4. Create Storage bucket
+
+In Supabase **Storage**, create a private bucket named `icons`, then run:
+
+```sql
+create policy "Users access own icon files" on storage.objects
+  for all using (auth.uid()::text = (storage.foldername(name))[1]);
+```
+
+### 5. Run locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Open http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Deploy to Vercel
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+vercel --prod
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Add the three environment variables in your Vercel project settings.
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/
+├── (app)/          # Protected routes (library, favorites, collections)
+├── auth/           # Login, callback, password reset
+actions/            # Next.js Server Actions (icons, collections, import)
+components/
+├── icon-grid/      # Icon cards, grid virtualization, empty state
+├── icon-detail/    # Side panel with copy/download options
+├── import/         # Upload, URL import dialogs
+├── layout/         # Sidebar, collection tree, app shell
+lib/
+├── hooks/          # useCollections, useIcons, useDndMove, etc.
+├── utils/          # SVG sanitization, image conversion, copy helpers
+supabase/
+└── migrations/     # Database schema
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Contributing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Deploy on Vercel
+## License
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT — see [LICENSE](LICENSE).
