@@ -12,6 +12,7 @@
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
+[![Deploy with Vercel](https://img.shields.io/badge/Deploy%20with-Vercel-black?style=flat-square&logo=vercel)](https://vercel.com/new)
 
 </div>
 
@@ -135,16 +136,6 @@ eikon/
 └── supabase/
     └── migrations/         # Schema: collections, icons, tags
 ```
-
----
-
-## Contributors
-
-<a href="https://github.com/islgl/eikon/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=islgl/eikon" />
-</a>
-
-Built with [Claude](https://claude.ai) by Anthropic.
 
 ---
 
