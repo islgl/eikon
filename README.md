@@ -1,8 +1,12 @@
 <div align="center">
 
-# Eikon
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:667EEA,100:764BA2&height=220&text=Eikon&fontSize=90&fontColor=ffffff&fontAlignY=40&desc=Personal%20Icon%20Manager&descSize=22&descAlignY=63&descColor=ffffffcc&animation=fadeIn" width="100%" />
 
-**A personal icon manager. Import, organize, and export icons — all in one place.**
+<br/>
+
+<img src="https://readme-typing-svg.demolab.com?font=Inter&weight=500&size=18&duration=2800&pause=600&color=888888&center=true&vCenter=true&width=600&height=36&lines=Import+SVG%2C+PNG%2C+JPG%2C+ICO%2C+ICNS+and+more;Organize+into+nested+collections+with+drag+%26+drop;Export+to+SVG%2C+JSX%2C+PNG+in+one+click" />
+
+<br/>
 
 [![Next.js](https://img.shields.io/badge/Next.js_16-black?style=flat-square&logo=next.js)](https://nextjs.org)
 [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com)
@@ -14,41 +18,41 @@
 
 ---
 
-## What is Eikon?
-
-Designers and developers accumulate icons from dozens of sources — icon sets, custom exports, screenshots, brand assets. Eikon gives them a single home: import from any source, organize into collections, and get your icons back in any format instantly.
-
 ## Features
 
-### Import anything
-- Drag-and-drop or pick files: **SVG, PNG, JPG, WebP, GIF, ICO, ICNS**
-- Import from a URL — any image format, not just SVG
+### 📥 Import anything
+- Drag-and-drop or pick files — **SVG, PNG, JPG, WebP, GIF, ICO, ICNS**
+- Import from a URL (any image format, not just SVG)
 - ICNS files are automatically unpacked to the highest-resolution frame
-- Raster images are stored as SVG wrappers for format consistency
+- Raster images wrapped as SVG for storage consistency
 
-### Organize
-- **Collections** — nested folders with emoji and color labels
-- **Tags** — cross-collection labeling with color coding
-- **Favorites** — quick-access starred icons
-- Drag icons between collections in the sidebar
+### 🗂️ Organize
+- **Nested collections** with emoji and color labels
+- **Tag system** with color coding
+- **Favorites** for quick access
+- **Drag icons between collections** in the sidebar
 
-### Export
+### 📤 Export
 - Copy as **SVG source**, **JSX component**, or **Data URI** — one click
 - Download as **SVG** or **PNG** at any size (16 → 128px)
-- Generate a signed **storage URL** for direct CDN access
+- Generate a signed **Storage URL** for direct CDN access
 
-### Search & browse
-- Fuzzy search across icon names and tags
-- Filter by collection or tag
+### 🔍 Search & browse
+- Fuzzy search across names and tags
 - Grid and list views with virtual scrolling
-- ⌘K command palette for instant navigation
+- **⌘K** command palette
+
+---
 
 ## Stack
 
-```
-Next.js 16  ·  Supabase (Postgres + Auth + Storage)  ·  TypeScript
-Tailwind CSS  ·  Base UI  ·  Framer Motion  ·  @dnd-kit
-```
+<div align="center">
+
+<img src="https://skillicons.dev/icons?i=nextjs,ts,react,tailwind,supabase,vercel&theme=dark" />
+
+</div>
+
+---
 
 ## Self-Hosting
 
@@ -81,7 +85,7 @@ ALLOWED_EMAILS=you@example.com
 
 ### 4. Initialize the database
 
-In your Supabase **SQL Editor**, run the contents of:
+In your Supabase **SQL Editor**, run:
 
 ```
 supabase/migrations/0001_init.sql
@@ -109,7 +113,7 @@ npm run dev
 npx vercel --prod
 ```
 
-Set the three environment variables in your Vercel project dashboard, then redeploy.
+Set the three environment variables in Vercel project settings, then redeploy.
 
 ---
 
@@ -133,10 +137,12 @@ eikon/
     └── migrations/         # Schema: collections, icons, tags
 ```
 
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md). Issues and PRs are welcome.
+---
 
 ## License
 
 [MIT](LICENSE)
+
+<div align="center">
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:764BA2,100:667EEA&height=100&section=footer" width="100%" />
+</div>
