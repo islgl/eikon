@@ -2,6 +2,8 @@
 
 <img src="https://capsule-render.vercel.app/api?type=waving&color=0:667EEA,100:764BA2&height=220&text=Eikon&fontSize=90&fontColor=ffffff&fontAlignY=40&desc=Personal%20Icon%20Manager&descSize=22&descAlignY=63&descColor=ffffffcc&animation=fadeIn" width="100%" />
 
+<img src="public/logo.svg" width="80" height="80" alt="Eikon logo" />
+
 <br/>
 
 <img src="https://readme-typing-svg.demolab.com?font=Inter&weight=500&size=18&duration=2800&pause=600&color=888888&center=true&vCenter=true&width=600&height=36&lines=Import+SVG%2C+PNG%2C+JPG%2C+ICO%2C+ICNS+and+more;Organize+into+nested+collections+with+drag+%26+drop;Export+to+SVG%2C+JSX%2C+PNG+in+one+click" />
