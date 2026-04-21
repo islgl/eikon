@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -17,26 +17,41 @@ export default function LoginPage() {
 }
 
 function LoginContent() {
-  const [email, setEmail] = useState('')
+  const router = useRouter()
   const searchParams = useSearchParams()
   const unauthorized = searchParams.get('error') === 'unauthorized'
+
+  const [mode, setMode] = useState<'login' | 'reset'>('login')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const [sent, setSent] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
 
   const supabase = createClient()
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${location.origin}/auth/callback` },
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    setLoading(false)
+    if (error) {
+      toast.error(error.message === 'Invalid login credentials' ? 'Incorrect email or password' : error.message)
+    } else {
+      router.push('/library')
+    }
+  }
+
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${location.origin}/auth/callback?next=/auth/reset-password`,
     })
     setLoading(false)
     if (error) {
       toast.error(error.message)
     } else {
-      setSent(true)
+      setResetSent(true)
     }
   }
 
@@ -54,19 +69,10 @@ function LoginContent() {
           </div>
         )}
 
-        {sent ? (
-          <div className="space-y-3 rounded-lg border border-border bg-muted/40 p-5 text-sm">
-            <p className="font-medium">Check your email</p>
-            <p className="text-muted-foreground">
-              We sent a magic link to <span className="font-medium text-foreground">{email}</span>
-            </p>
-          </div>
-        ) : (
+        {mode === 'login' ? (
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-sm font-medium">
-                Email
-              </Label>
+              <Label htmlFor="email" className="text-sm font-medium">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -78,9 +84,60 @@ function LoginContent() {
                 className="h-9 text-sm"
               />
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="h-9 text-sm"
+              />
+            </div>
             <Button type="submit" disabled={loading} className="w-full h-9 text-sm">
-              {loading ? 'Sending…' : 'Continue with email'}
+              {loading ? 'Signing in…' : 'Sign in'}
             </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              <button type="button" onClick={() => setMode('reset')} className="hover:text-foreground transition-colors">
+                Forgot password?
+              </button>
+            </p>
+          </form>
+        ) : resetSent ? (
+          <div className="space-y-3 rounded-lg border border-border bg-muted/40 p-5 text-sm">
+            <p className="font-medium">Check your email</p>
+            <p className="text-muted-foreground">
+              Reset link sent to <span className="font-medium text-foreground">{email}</span>
+            </p>
+            <button onClick={() => { setMode('login'); setResetSent(false) }} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+              Back to sign in
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleResetPassword} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="reset-email" className="text-sm font-medium">Email</Label>
+              <Input
+                id="reset-email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoFocus
+                className="h-9 text-sm"
+              />
+            </div>
+            <Button type="submit" disabled={loading} className="w-full h-9 text-sm">
+              {loading ? 'Sending…' : 'Send reset link'}
+            </Button>
+            <p className="text-center text-xs text-muted-foreground">
+              <button type="button" onClick={() => setMode('login')} className="hover:text-foreground transition-colors">
+                Back to sign in
+              </button>
+            </p>
           </form>
         )}
       </div>
