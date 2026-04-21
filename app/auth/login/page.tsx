@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,6 +10,8 @@ import { toast } from 'sonner'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
+  const searchParams = useSearchParams()
+  const unauthorized = searchParams.get('error') === 'unauthorized'
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
 
@@ -36,6 +39,12 @@ export default function LoginPage() {
           <div className="text-2xl font-semibold tracking-tight">Eikon</div>
           <p className="text-sm text-muted-foreground">Your personal icon library</p>
         </div>
+
+        {unauthorized && (
+          <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            This email is not authorized to access Eikon.
+          </div>
+        )}
 
         {sent ? (
           <div className="space-y-3 rounded-lg border border-border bg-muted/40 p-5 text-sm">
