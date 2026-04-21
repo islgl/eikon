@@ -45,6 +45,11 @@ supabase/.temp
 # design working files
 logo-concepts.html
 
+# Claude Code skills (local only)
+.agents/
+skills/
+skills-lock.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
