@@ -5,6 +5,7 @@ import type { Icon, Tag } from '@/types'
 import { useIcons } from '@/lib/hooks/use-icons'
 import { IconToolbar } from './icon-toolbar'
 import { IconGrid } from './icon-grid'
+import { EmptyDropzone } from './empty-dropzone'
 import { IconDetailPanel } from '@/components/icon-detail/icon-detail-panel'
 import { ImportDialog } from '@/components/import/import-dialog'
 import type { ViewMode } from '@/types'
@@ -52,17 +53,25 @@ export function LibraryView({ icons: initialIcons, collectionId, title }: Librar
       />
 
       <div className="flex flex-1 min-h-0">
-        <IconGrid
-          icons={iconState.filteredIcons}
-          iconSize={iconSize}
-          viewMode={viewMode}
-          selectedIds={iconState.selectedIds}
-          activeIconId={detailIconId}
-          onSelect={iconState.toggleSelect}
-          onOpenDetail={(id) => setDetailIconId(id === detailIconId ? null : id)}
-          onUpdateIcon={iconState.updateIcon}
-          onRemoveIcons={iconState.removeIcons}
-        />
+        {iconState.icons.length === 0 ? (
+          <EmptyDropzone
+            collectionId={collectionId}
+            onImported={iconState.addIcons}
+            onOpenDialog={() => setImportOpen(true)}
+          />
+        ) : (
+          <IconGrid
+            icons={iconState.filteredIcons}
+            iconSize={iconSize}
+            viewMode={viewMode}
+            selectedIds={iconState.selectedIds}
+            activeIconId={detailIconId}
+            onSelect={iconState.toggleSelect}
+            onOpenDetail={(id) => setDetailIconId(id === detailIconId ? null : id)}
+            onUpdateIcon={iconState.updateIcon}
+            onRemoveIcons={iconState.removeIcons}
+          />
+        )}
 
         {detailIcon && (
           <IconDetailPanel

@@ -150,3 +150,19 @@ export async function deleteTag(id: string): Promise<void> {
   if (error) throw error
   revalidatePath('/', 'layout')
 }
+
+export async function getIconSignedUrl(iconId: string): Promise<string> {
+  const { supabase, user } = await getUser()
+  const { data: icon } = await supabase
+    .from('icons')
+    .select('storage_path')
+    .eq('id', iconId)
+    .eq('user_id', user.id)
+    .single()
+  if (!icon?.storage_path) throw new Error('Icon not found')
+  const { data } = await supabase.storage
+    .from('icons')
+    .createSignedUrl(icon.storage_path, 604800) // 7 days
+  if (!data?.signedUrl) throw new Error('Failed to generate URL')
+  return data.signedUrl
+}

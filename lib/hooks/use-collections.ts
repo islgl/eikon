@@ -29,6 +29,7 @@ export function buildCollectionTree(flat: Collection[]): Collection[] {
 export function useCollections(initialCollections: Collection[]) {
   const [collections, setCollections] = useState<Collection[]>(initialCollections)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const tree = useMemo(() => buildCollectionTree(collections), [collections])
 
@@ -46,6 +47,7 @@ export function useCollections(initialCollections: Collection[]) {
 
   const addCollection = useCallback((c: Collection) => {
     setCollections((prev) => [...prev, c])
+    setEditingId(c.id)
   }, [])
 
   const updateCollection = useCallback((id: string, changes: Partial<Collection>) => {
@@ -64,5 +66,7 @@ export function useCollections(initialCollections: Collection[]) {
     addCollection,
     updateCollection,
     removeCollection,
+    editingId,
+    clearEditingId: () => setEditingId(null),
   }
 }

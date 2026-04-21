@@ -36,7 +36,7 @@ export function IconGrid({
   const parentRef = useRef<HTMLDivElement>(null)
   const { width } = useContainerSize(parentRef)
 
-  const cardSize = iconSize + 24 // icon + padding
+  const cardSize = iconSize + 48 // icon + space for buttons + name
 
   // Grid mode: chunk icons into rows
   const cols = Math.max(1, Math.floor((width + GRID_GAP) / (cardSize + GRID_GAP)))

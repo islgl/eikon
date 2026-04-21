@@ -50,7 +50,7 @@ export function Sidebar({ open, onToggle, collectionState, tags, user, onOpenCom
 
   async function handleNewCollection() {
     try {
-      const c = await createCollection({ name: 'Untitled', emoji: '📁' })
+      const c = await createCollection({ name: 'Untitled' })
       collectionState.addCollection(c)
     } catch {
       toast.error('Failed to create collection')
@@ -157,6 +157,8 @@ export function Sidebar({ open, onToggle, collectionState, tags, user, onOpenCom
             onUpdateCollection={collectionState.updateCollection}
             onRemoveCollection={collectionState.removeCollection}
             sidebarOpen={open}
+            editingId={collectionState.editingId}
+            onClearEditingId={collectionState.clearEditingId}
           />
 
           {/* Tags */}

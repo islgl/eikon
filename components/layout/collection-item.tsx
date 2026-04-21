@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, FolderOpen, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { ChevronRight, Folder, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Collection } from '@/types'
 import { cn } from '@/lib/utils'
@@ -27,6 +27,8 @@ type CollectionItemProps = {
   onRemove: () => void
   sidebarOpen: boolean
   depth: number
+  autoEdit?: boolean
+  onAutoEditDone?: () => void
 }
 
 export function CollectionItem({
@@ -38,11 +40,21 @@ export function CollectionItem({
   onRemove,
   sidebarOpen,
   depth,
+  autoEdit,
+  onAutoEditDone,
 }: CollectionItemProps) {
   const pathname = usePathname()
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(collection.name)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (autoEdit && sidebarOpen) {
+      setEditing(true)
+      onAutoEditDone?.()
+      setTimeout(() => inputRef.current?.select(), 50)
+    }
+  }, [autoEdit, sidebarOpen, onAutoEditDone])
   const isActive = pathname === `/library/${collection.id}`
 
   const itemClass = cn(
@@ -101,7 +113,7 @@ export function CollectionItem({
           className="flex items-center gap-1.5 flex-1 min-w-0"
         >
           <span className="text-sm leading-none shrink-0">
-            {collection.emoji ?? <FolderOpen className="h-3.5 w-3.5" />}
+            {collection.emoji ?? <Folder className="h-3.5 w-3.5" />}
           </span>
           <AnimatePresence>
             {sidebarOpen && (

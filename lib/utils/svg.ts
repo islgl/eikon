@@ -29,7 +29,8 @@ export function sanitizeSvg(svgString: string): string {
     .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
     .replace(/on\w+\s*=\s*[^\s>]*/gi, '')
     .replace(/javascript\s*:/gi, '')
-    .replace(/data\s*:/gi, 'data-safe:')
+    // Only block non-image data URIs (preserve legitimate data:image/ base64 content)
+    .replace(/data\s*:(?!\s*image\/)/gi, 'data-safe:')
 
   return clean.trim()
 }
@@ -54,7 +55,7 @@ export function extractSvgDimensions(svgString: string): { width: number; height
 
 export function extractSvgName(filename: string): string {
   return filename
-    .replace(/\.svg$/i, '')
+    .replace(/\.(svg|png|jpe?g|webp|gif|ico|icns)$/i, '')
     .replace(/[-_]/g, ' ')
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .replace(/\s+/g, ' ')
@@ -109,6 +110,10 @@ export function svgToJsx(svgString: string, componentName: string): string {
     .replace(/xml:space=/g, 'xmlSpace=')
 
   return `export function ${name}Icon(props: React.SVGProps<SVGSVGElement>) {\n  return (\n    ${jsx.replace(/<svg/, '<svg {...props}')}\n  )\n}\n`
+}
+
+export function isRasterWrappedSvg(svgContent: string): boolean {
+  return svgContent.includes('<image href="data:image/')
 }
 
 // Hash SVG content for duplicate detection

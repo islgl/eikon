@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dialog'
 import type { Icon } from '@/types'
 import { DropzoneTab } from './dropzone-tab'
-import { PasteSvgTab } from './paste-svg-tab'
 import { UrlImportTab } from './url-import-tab'
 
 type ImportDialogProps = {
@@ -37,22 +36,11 @@ export function ImportDialog({ open, onOpenChange, defaultCollectionId, onImport
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-1">
           <TabsList className="w-full">
             <TabsTrigger value="upload" className="flex-1 text-sm">Upload</TabsTrigger>
-            <TabsTrigger value="paste" className="flex-1 text-sm">Paste SVG</TabsTrigger>
             <TabsTrigger value="url" className="flex-1 text-sm">From URL</TabsTrigger>
           </TabsList>
 
           <TabsContent value="upload" className="mt-4">
             <DropzoneTab
-              collectionId={defaultCollectionId}
-              onImported={(icons) => {
-                onImported(icons)
-                handleClose()
-              }}
-            />
-          </TabsContent>
-
-          <TabsContent value="paste" className="mt-4">
-            <PasteSvgTab
               collectionId={defaultCollectionId}
               onImported={(icons) => {
                 onImported(icons)

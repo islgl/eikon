@@ -11,6 +11,8 @@ type CollectionTreeProps = {
   onUpdateCollection: (id: string, changes: Partial<Collection>) => void
   onRemoveCollection: (id: string) => void
   sidebarOpen: boolean
+  editingId: string | null
+  onClearEditingId: () => void
   depth?: number
 }
 
@@ -21,6 +23,8 @@ export function CollectionTree({
   onUpdateCollection,
   onRemoveCollection,
   sidebarOpen,
+  editingId,
+  onClearEditingId,
   depth = 0,
 }: CollectionTreeProps) {
   return (
@@ -36,6 +40,8 @@ export function CollectionTree({
             onRemove={() => onRemoveCollection(collection.id)}
             sidebarOpen={sidebarOpen}
             depth={depth}
+            autoEdit={editingId === collection.id}
+            onAutoEditDone={onClearEditingId}
           />
           {expandedIds.has(collection.id) && collection.children && collection.children.length > 0 && (
             <CollectionTree
@@ -45,6 +51,8 @@ export function CollectionTree({
               onUpdateCollection={onUpdateCollection}
               onRemoveCollection={onRemoveCollection}
               sidebarOpen={sidebarOpen}
+              editingId={editingId}
+              onClearEditingId={onClearEditingId}
               depth={depth + 1}
             />
           )}

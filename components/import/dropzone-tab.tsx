@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { sanitizeSvg, extractSvgName } from '@/lib/utils/svg'
+import { ACCEPTED_IMAGE_TYPES, ACCEPTED_EXTENSIONS_LABEL, isSvgFile, isIcnsFile, icnsFileToSvgContent, rasterFileToSvgContent } from '@/lib/utils/image'
 import { importIcons } from '@/actions/import'
 import type { Icon, ImportItem } from '@/types'
 
@@ -40,30 +41,22 @@ export function DropzoneTab({ collectionId, onImported }: DropzoneTabProps) {
   const [progress, setProgress] = useState(0)
 
   const onDrop = useCallback(async (accepted: File[]) => {
-    const svgFiles = accepted.filter((f) => f.name.endsWith('.svg') || f.type === 'image/svg+xml')
-
-    if (svgFiles.length === 0) {
-      toast.error('No SVG files found')
+    if (accepted.length === 0) {
+      toast.error('No supported files found')
       return
     }
 
     const entries = await Promise.all(
-      svgFiles.map(async (file): Promise<FileEntry> => {
+      accepted.map(async (file): Promise<FileEntry> => {
         try {
-          const text = await file.text()
-          const sanitized = sanitizeSvg(text)
-          return {
-            name: extractSvgName(file.name),
-            svgContent: sanitized,
-            status: 'pending',
-          }
-        } catch (err) {
-          return {
-            name: file.name,
-            svgContent: '',
-            status: 'error',
-            error: 'Invalid SVG',
-          }
+          const svgContent = isSvgFile(file)
+            ? sanitizeSvg(await file.text())
+            : isIcnsFile(file)
+              ? await icnsFileToSvgContent(file)
+              : await rasterFileToSvgContent(file)
+          return { name: extractSvgName(file.name), svgContent, status: 'pending' }
+        } catch {
+          return { name: file.name, svgContent: '', status: 'error', error: 'Invalid file' }
         }
       })
     )
@@ -72,7 +65,7 @@ export function DropzoneTab({ collectionId, onImported }: DropzoneTabProps) {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 'image/svg+xml': ['.svg'] },
+    accept: ACCEPTED_IMAGE_TYPES,
     multiple: true,
   })
 
@@ -96,8 +89,7 @@ export function DropzoneTab({ collectionId, onImported }: DropzoneTabProps) {
 
     if (result.imported > 0) {
       toast.success(`Imported ${result.imported} icon${result.imported > 1 ? 's' : ''}`)
-      // Return placeholder icons (real data will come from revalidation)
-      onImported([])
+      onImported(result.icons)
     }
     if (result.skipped > 0) toast.info(`Skipped ${result.skipped} duplicate${result.skipped > 1 ? 's' : ''}`)
     if (result.errors.length > 0) toast.error(`${result.errors.length} error${result.errors.length > 1 ? 's' : ''}`)
@@ -117,9 +109,9 @@ export function DropzoneTab({ collectionId, onImported }: DropzoneTabProps) {
         <input {...getInputProps()} />
         <Upload className="h-8 w-8 mx-auto mb-3 text-muted-foreground" />
         <p className="text-sm font-medium mb-1">
-          {isDragActive ? 'Drop SVG files here' : 'Drag & drop SVG files'}
+          {isDragActive ? 'Drop files here' : 'Drag & drop icon files'}
         </p>
-        <p className="text-xs text-muted-foreground">or click to browse</p>
+        <p className="text-xs text-muted-foreground">{ACCEPTED_EXTENSIONS_LABEL} · or click to browse</p>
       </div>
 
       {files.length > 0 && (

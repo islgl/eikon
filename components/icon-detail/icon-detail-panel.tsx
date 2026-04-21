@@ -2,13 +2,14 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { X, Copy, Download, Heart, Pencil, Check, ChevronDown } from 'lucide-react'
+import { X, Copy, Download, Heart, Pencil, Check, ChevronDown, Link } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Icon, CopyFormat } from '@/types'
 import { cn } from '@/lib/utils'
 import { copyToClipboard, formatIconForCopy, downloadSvg, downloadPng } from '@/lib/utils/copy'
+import { isRasterWrappedSvg } from '@/lib/utils/svg'
 import { applyColorToSvg } from '@/lib/utils/color'
-import { updateIcon, toggleFavorite } from '@/actions/icons'
+import { updateIcon, toggleFavorite, getIconSignedUrl } from '@/actions/icons'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
@@ -42,6 +43,7 @@ export function IconDetailPanel({ icon, onClose, onUpdate, onDelete }: IconDetai
   const [previewColor, setPreviewColor] = useState('#000000')
   const [copyFormat, setCopyFormat] = useState<CopyFormat>('svg')
 
+  const isRaster = isRasterWrappedSvg(icon.svg_content)
   const previewSvg =
     previewColor !== '#000000' ? applyColorToSvg(icon.svg_content, previewColor) : icon.svg_content
 
@@ -64,6 +66,17 @@ export function IconDetailPanel({ icon, onClose, onUpdate, onDelete }: IconDetai
     const ok = await copyToClipboard(content)
     if (ok) toast.success(`Copied as ${copyFormat.toUpperCase()}`)
     else toast.error('Copy failed')
+  }
+
+  async function handleCopyUrl() {
+    try {
+      const url = await getIconSignedUrl(icon.id)
+      const ok = await copyToClipboard(url)
+      if (ok) toast.success('URL copied (valid 7 days)')
+      else toast.error('Copy failed')
+    } catch {
+      toast.error('Failed to generate URL')
+    }
   }
 
   async function handleFavorite() {
@@ -161,8 +174,8 @@ export function IconDetailPanel({ icon, onClose, onUpdate, onDelete }: IconDetai
             />
           </div>
 
-          {/* Color picker */}
-          <div>
+          {/* Color picker — SVG only */}
+          {!isRaster && <div>
             <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider block mb-2">
               Preview color
             </label>
@@ -188,39 +201,50 @@ export function IconDetailPanel({ icon, onClose, onUpdate, onDelete }: IconDetai
                 Reset
               </Button>
             </div>
-          </div>
+          </div>}
 
           <Separator />
 
           {/* Copy */}
-          <div>
-            <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider block mb-2">
-              Copy as
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider block">
+              Copy
             </label>
-            <div className="flex gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  render={
-                    <Button variant="outline" size="sm" className="h-7 text-xs flex-1 justify-between" />
-                  }
-                >
-                  {COPY_FORMATS.find((f) => f.format === copyFormat)?.label}
-                  <ChevronDown className="h-3 w-3 ml-1" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start">
-                  {COPY_FORMATS.map(({ format, label }) => (
-                    <DropdownMenuItem key={format} onClick={() => setCopyFormat(format)}>
-                      {label}
-                      {copyFormat === format && <Check className="h-3 w-3 ml-auto" />}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <Button size="sm" onClick={handleCopy} className="h-7 text-xs gap-1.5">
-                <Copy className="h-3 w-3" />
-                Copy
-              </Button>
-            </div>
+            {!isRaster && (
+              <div className="flex gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button variant="outline" size="sm" className="h-7 text-xs flex-1 justify-between" />
+                    }
+                  >
+                    {COPY_FORMATS.find((f) => f.format === copyFormat)?.label}
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {COPY_FORMATS.map(({ format, label }) => (
+                      <DropdownMenuItem key={format} onClick={() => setCopyFormat(format)}>
+                        {label}
+                        {copyFormat === format && <Check className="h-3 w-3 ml-auto" />}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button size="sm" onClick={handleCopy} className="h-7 text-xs gap-1.5">
+                  <Copy className="h-3 w-3" />
+                  Copy
+                </Button>
+              </div>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-7 text-xs justify-start gap-2"
+              onClick={handleCopyUrl}
+            >
+              <Link className="h-3 w-3" />
+              Copy URL
+            </Button>
           </div>
 
           {/* Download */}
@@ -229,15 +253,17 @@ export function IconDetailPanel({ icon, onClose, onUpdate, onDelete }: IconDetai
               Download
             </label>
             <div className="space-y-1.5">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full h-7 text-xs justify-start gap-2"
-                onClick={() => downloadSvg(icon.svg_content, icon.name)}
-              >
-                <Download className="h-3 w-3" />
-                Download SVG
-              </Button>
+              {!isRaster && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full h-7 text-xs justify-start gap-2"
+                  onClick={() => downloadSvg(icon.svg_content, icon.name)}
+                >
+                  <Download className="h-3 w-3" />
+                  Download SVG
+                </Button>
+              )}
               <DropdownMenu>
                 <DropdownMenuTrigger
                   render={

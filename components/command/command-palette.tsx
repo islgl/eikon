@@ -10,7 +10,7 @@ import {
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command'
-import { Library, Heart, FolderOpen, Upload, Hash } from 'lucide-react'
+import { Library, Heart, Folder, Upload, Hash } from 'lucide-react'
 import type { Collection, Tag } from '@/types'
 
 type CommandPaletteProps = {
@@ -55,7 +55,7 @@ export function CommandPalette({ open, onOpenChange, collections, tags }: Comman
                   value={c.name}
                   onSelect={() => navigate(`/library/${c.id}`)}
                 >
-                  <span className="mr-2 text-sm">{c.emoji ?? <FolderOpen className="h-4 w-4" />}</span>
+                  <span className="mr-2 text-sm">{c.emoji ?? <Folder className="h-4 w-4" />}</span>
                   {c.name}
                 </CommandItem>
               ))}

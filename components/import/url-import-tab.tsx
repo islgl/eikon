@@ -23,7 +23,7 @@ export function UrlImportTab({ collectionId, onImported }: UrlImportTabProps) {
     try {
       const path = new URL(u).pathname
       const filename = path.split('/').pop() ?? ''
-      return filename.replace(/\.svg$/i, '').replace(/[-_]/g, ' ').trim()
+      return filename.replace(/\.(svg|png|jpe?g|webp|gif|ico)$/i, '').replace(/[-_]/g, ' ').trim()
     } catch {
       return ''
     }
@@ -42,7 +42,7 @@ export function UrlImportTab({ collectionId, onImported }: UrlImportTabProps) {
 
     if (result.success) {
       toast.success(`Imported "${name}"`)
-      onImported([])
+      onImported(result.icons ?? [])
     } else {
       toast.error(result.error ?? 'Import failed')
     }
@@ -52,7 +52,7 @@ export function UrlImportTab({ collectionId, onImported }: UrlImportTabProps) {
     <div className="space-y-4">
       <div className="space-y-3">
         <div className="space-y-1.5">
-          <Label className="text-xs">SVG URL</Label>
+          <Label className="text-xs">Image URL</Label>
           <Input
             type="url"
             placeholder="https://example.com/icon.svg"
@@ -61,7 +61,7 @@ export function UrlImportTab({ collectionId, onImported }: UrlImportTabProps) {
             className="h-8 text-sm"
           />
           <p className="text-[11px] text-muted-foreground">
-            The URL must point directly to an SVG file
+            Supports SVG, PNG, JPG, WebP, GIF, ICO
           </p>
         </div>
         <div className="space-y-1.5">
