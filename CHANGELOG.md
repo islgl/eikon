@@ -6,9 +6,13 @@
 - Drag and drop icons onto sidebar collections to move them
 - Right-click context menu: Rename icon inline
 - Drag overlay follows cursor precisely with card preview
+- GitHub icon link in toolbar top-right corner
+- Import button moved to filter bar; hover animation (icon nudges up) and pointer cursor
+- Eikon logo (Grid A variant) — SVG mark + favicon
 
 ### Changed
 - Drop target collision detection aligned with cursor position (`snapCenterToCursor` on `DndContext`)
+- Import button repositioned from title row to filter bar right end
 
 ---
 
