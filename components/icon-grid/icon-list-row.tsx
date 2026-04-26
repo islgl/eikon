@@ -51,7 +51,8 @@ export function IconListRow({ icon, selected, active, onSelect, onOpenDetail, on
     >
       {/* Icon preview */}
       <IconPreview
-        svgContent={icon.svg_content}
+        iconId={icon.id}
+        updatedAt={icon.updated_at}
         className="h-6 w-6 flex items-center justify-center shrink-0 text-foreground"
       />
 

@@ -26,6 +26,25 @@ test('IconPreview renders SVG previews as data-uri images instead of inline mark
   assert.match(extractImageSrc(html), /^data:image\/svg\+xml;base64,/)
 })
 
+test('IconPreview renders persisted icons through the preview route', () => {
+  const html = renderToStaticMarkup(
+    createElement(IconPreview, {
+      iconId: 'icon-123',
+      updatedAt: '2026-04-26T12:34:56.000Z',
+      className: 'h-6 w-6',
+    })
+  )
+
+  assert.match(html, /<img/)
+  assert.match(html, /class="icon-preview h-6 w-6"/)
+  assert.match(html, /alt=""/)
+  assert.match(html, /aria-hidden="true"/)
+  assert.equal(
+    extractImageSrc(html),
+    '/api/icon-preview/icon-123?v=2026-04-26T12%3A34%3A56.000Z'
+  )
+})
+
 test('IconPreview normalizes SVG markup before encoding it for preview images', () => {
   const html = renderToStaticMarkup(
     createElement(IconPreview, {

@@ -28,6 +28,7 @@
 - App metadata icon routes (`/icon.svg`, `/favicon.ico`, etc.) no longer get redirected to login by the auth proxy
 - Brand icon now renders again on the login screen and sidebar, and shared logo assets stay publicly reachable through the auth proxy
 - Library and collection previews now render imported icons via SVG image data URLs, preventing production-only inline SVG rendering failures for imported assets
+- Persisted icon previews now load through an authenticated preview route instead of embedded data URLs, fixing blank imported icons in production and reducing oversized page payloads
 
 ---
 

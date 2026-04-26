@@ -33,7 +33,7 @@ type IconCardProps = {
 export function IconCard({ icon, size, selected, active, onSelect, onOpenDetail, onUpdate, onRemove }: IconCardProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: icon.id,
-    data: { name: icon.name, svgContent: icon.svg_content },
+    data: { name: icon.name, updatedAt: icon.updated_at },
   })
 
   const [hovered, setHovered] = useState(false)
@@ -124,7 +124,8 @@ export function IconCard({ icon, size, selected, active, onSelect, onOpenDetail,
         {/* SVG preview — centered in remaining space */}
         <div className="flex-1 flex items-center justify-center min-h-0">
           <IconPreview
-            svgContent={icon.svg_content}
+            iconId={icon.id}
+            updatedAt={icon.updated_at}
             className="text-foreground"
             style={{ width: size, height: size }}
           />

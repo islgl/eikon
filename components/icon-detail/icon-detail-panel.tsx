@@ -46,6 +46,7 @@ export function IconDetailPanel({ icon, onClose, onUpdate }: IconDetailPanelProp
   const isRaster = isRasterWrappedSvg(icon.svg_content)
   const previewSvg =
     previewColor !== '#000000' ? applyColorToSvg(icon.svg_content, previewColor) : icon.svg_content
+  const usesCustomPreviewColor = !isRaster && previewColor !== '#000000'
 
   async function handleRename() {
     if (!name.trim() || name === icon.name) {
@@ -167,13 +168,17 @@ export function IconDetailPanel({ icon, onClose, onUpdate }: IconDetailPanelProp
 
           {/* Preview */}
           <div className="flex items-center justify-center h-32 rounded-lg border border-border bg-muted/20">
-            {isRaster ? (
-              <IconPreview svgContent={previewSvg} className="h-16 w-16" />
-            ) : (
+            {usesCustomPreviewColor ? (
               <div
                 className="icon-preview h-16 w-16"
                 style={{ color: previewColor }}
                 dangerouslySetInnerHTML={{ __html: previewSvg }}
+              />
+            ) : (
+              <IconPreview
+                iconId={icon.id}
+                updatedAt={icon.updated_at}
+                className="h-16 w-16"
               />
             )}
           </div>

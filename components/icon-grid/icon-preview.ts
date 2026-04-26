@@ -15,6 +15,18 @@ function normalizePreviewSvg(svgContent: string): string {
   return svg
 }
 
+function buildIconPreviewSrc(iconId: string, updatedAt?: string | null): string {
+  const params = new URLSearchParams()
+  if (updatedAt) {
+    params.set('v', updatedAt)
+  }
+
+  const query = params.toString()
+  return query.length > 0
+    ? `/api/icon-preview/${encodeURIComponent(iconId)}?${query}`
+    : `/api/icon-preview/${encodeURIComponent(iconId)}`
+}
+
 function svgToPreviewDataUri(svgContent: string): string {
   const normalized = normalizePreviewSvg(svgContent)
   const base64 = btoa(unescape(encodeURIComponent(normalized)))
@@ -22,18 +34,32 @@ function svgToPreviewDataUri(svgContent: string): string {
 }
 
 type IconPreviewProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'src'> & {
-  svgContent: string
+  iconId?: string
+  updatedAt?: string | null
+  svgContent?: string
   decorative?: boolean
 }
 
 export function IconPreview({
+  iconId,
+  updatedAt,
   svgContent,
   alt = 'Icon preview',
   className,
   decorative = true,
   ...props
 }: IconPreviewProps) {
-  const src = useMemo(() => svgToPreviewDataUri(svgContent), [svgContent])
+  const src = useMemo(() => {
+    if (iconId) {
+      return buildIconPreviewSrc(iconId, updatedAt)
+    }
+
+    if (svgContent) {
+      return svgToPreviewDataUri(svgContent)
+    }
+
+    throw new Error('IconPreview requires iconId or svgContent')
+  }, [iconId, svgContent, updatedAt])
   const classes = ['icon-preview', className].filter(Boolean).join(' ')
 
   return createElement('img', {
