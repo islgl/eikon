@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { BrandMark } from '@/components/brand/brand-mark'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -58,9 +59,12 @@ function LoginContent() {
   return (
     <div className="flex min-h-full items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-8">
-        <div className="space-y-1">
-          <div className="text-2xl font-semibold tracking-tight">Eikon</div>
-          <p className="text-sm text-muted-foreground">Your personal icon library</p>
+        <div className="flex items-center gap-3">
+          <BrandMark className="h-11 w-11" />
+          <div className="space-y-1">
+            <div className="text-2xl font-semibold tracking-tight">Eikon</div>
+            <p className="text-sm text-muted-foreground">Your personal icon library</p>
+          </div>
         </div>
 
         {unauthorized && (

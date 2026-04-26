@@ -21,6 +21,7 @@ import {
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { BrandMark } from '@/components/brand/brand-mark'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
@@ -66,19 +67,22 @@ export function Sidebar({ open, onToggle, collectionState, tags, user, onOpenCom
     >
       {/* Header */}
       <div className="flex items-center h-12 px-3 shrink-0">
-        <AnimatePresence>
-          {open && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="flex-1 min-w-0"
-            >
-              <span className="text-sm font-semibold tracking-tight truncate flex-1">Eikon</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div className="flex flex-1 min-w-0 items-center gap-2">
+          <BrandMark decorative className="h-6 w-6" />
+          <AnimatePresence>
+            {open && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="min-w-0"
+              >
+                <span className="text-sm font-semibold tracking-tight truncate flex-1">Eikon</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
         <Button
           variant="ghost"
           size="icon"
