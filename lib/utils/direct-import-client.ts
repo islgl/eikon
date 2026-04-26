@@ -1,18 +1,9 @@
 import { toast } from 'sonner'
-import { importIcons } from '@/actions/import'
+import { isAcceptedImageFile } from '@/lib/utils/image'
 import {
-  isAcceptedImageFile,
-  isSvgFile,
-  isIcnsFile,
-  icnsFileToSvgContent,
-  rasterFileToSvgContent,
-} from '@/lib/utils/image'
-import {
-  importFilesDirectly,
   notifyDirectImportOutcome,
   resolveImportCollectionId,
 } from '@/lib/utils/direct-import'
-import { sanitizeSvg, extractSvgName } from '@/lib/utils/svg'
 import type { Icon } from '@/types'
 
 export async function runDirectImport(
@@ -20,18 +11,53 @@ export async function runDirectImport(
   collectionId: string | null,
   onImported: (icons: Icon[]) => void
 ) {
-  const outcome = await importFilesDirectly<Icon>({
-    files,
-    collectionId: resolveImportCollectionId(collectionId),
-    isSupportedFile: isAcceptedImageFile,
-    isSvgFile,
-    isIcnsFile,
-    convertSvgFile: async (file) => sanitizeSvg(await file.text()),
-    convertIcnsFile: icnsFileToSvgContent,
-    convertRasterFile: rasterFileToSvgContent,
-    extractName: extractSvgName,
-    importItems: importIcons,
-  })
+  const supportedFiles = files.filter((file) => isAcceptedImageFile(file))
+
+  const outcome = supportedFiles.length === 0
+    ? { status: 'empty' as const }
+    : await (async () => {
+        try {
+          const formData = new FormData()
+          const normalizedCollectionId = resolveImportCollectionId(collectionId)
+
+          if (normalizedCollectionId) {
+            formData.append('collectionId', normalizedCollectionId)
+          }
+
+          for (const file of supportedFiles) {
+            formData.append('files', file)
+          }
+
+          const response = await fetch('/api/import/files', {
+            method: 'POST',
+            body: formData,
+          })
+
+          const payload = await response.json().catch(() => null)
+
+          if (!response.ok) {
+            return {
+              status: 'error' as const,
+              error: typeof payload?.error === 'string' ? payload.error : 'Import failed',
+            }
+          }
+
+          return {
+            status: 'success' as const,
+            result: {
+              imported: Number(payload?.imported ?? 0),
+              skipped: Number(payload?.skipped ?? 0),
+              errors: Array.isArray(payload?.errors) ? payload.errors : [],
+              icons: Array.isArray(payload?.icons) ? payload.icons as Icon[] : [],
+            },
+          }
+        } catch (error) {
+          return {
+            status: 'error' as const,
+            error: error instanceof Error ? error.message : 'Import failed',
+          }
+        }
+      })()
 
   notifyDirectImportOutcome(outcome, { onImported, toastApi: toast })
   return outcome
