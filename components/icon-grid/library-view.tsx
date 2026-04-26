@@ -20,17 +20,18 @@ import type { ViewMode } from '@/types'
 
 type LibraryViewProps = {
   icons: Icon[]
+  hasMore: boolean
   collectionId: string | null
   title: string
 }
 
-export function LibraryView({ icons: initialIcons, collectionId, title }: LibraryViewProps) {
+export function LibraryView({ icons: initialIcons, hasMore: initialHasMore, collectionId, title }: LibraryViewProps) {
   const [iconSize, setIconSize] = useState(64)
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [detailIconId, setDetailIconId] = useState<string | null>(null)
   const [importOpen, setImportOpen] = useState(false)
 
-  const iconState = useIcons({ initialIcons, collectionId })
+  const iconState = useIcons({ initialIcons, initialHasMore, collectionId })
   const { register } = useDndMove()
   const { removeIcons } = iconState
 
@@ -141,6 +142,9 @@ export function LibraryView({ icons: initialIcons, collectionId, title }: Librar
             onOpenDetail={(id) => setDetailIconId(id === detailIconId ? null : id)}
             onUpdateIcon={iconState.updateIcon}
             onRemoveIcons={iconState.removeIcons}
+            hasMore={iconState.hasMore}
+            isLoadingMore={iconState.isLoadingMore}
+            onLoadMore={iconState.loadMore}
           />
         )}
 

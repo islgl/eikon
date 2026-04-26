@@ -15,86 +15,102 @@ async function getUser() {
 export async function importIcons(
   items: ImportItem[]
 ): Promise<{ imported: number; skipped: number; errors: string[]; icons: Icon[] }> {
+  if (items.length === 0) return { imported: 0, skipped: 0, errors: [], icons: [] }
+
   const { supabase, user } = await getUser()
 
-  let imported = 0
-  let skipped = 0
-  const errors: string[] = []
-  const icons: Icon[] = []
+  // Batch duplicate check: group items by collectionId, one query per group
+  const byCollection = items.reduce<Record<string, ImportItem[]>>((acc, item) => {
+    const key = item.collectionId ?? '__null__'
+    ;(acc[key] ??= []).push(item)
+    return acc
+  }, {})
 
-  for (const item of items) {
-    try {
-      const sanitized = sanitizeSvg(item.svgContent)
-      const normalized = normalizeSvg(sanitized)
-      const { width, height } = extractSvgDimensions(normalized)
-
-      // Check for duplicate by name within same collection
-      const { data: existing } = await supabase
+  const skippedNames = new Set<string>()
+  await Promise.all(
+    Object.entries(byCollection).map(async ([cid, group]) => {
+      const realCid = cid === '__null__' ? null : cid
+      let q = supabase
         .from('icons')
-        .select('id')
+        .select('name')
         .eq('user_id', user.id)
-        .eq('name', item.name)
-        .eq('collection_id', item.collectionId ?? null)
-        .single()
+        .in('name', group.map((i) => i.name))
+      q = realCid === null ? q.is('collection_id', null) : q.eq('collection_id', realCid)
+      const { data } = await q
+      for (const row of data ?? []) skippedNames.add(`${row.name}::${cid}`)
+    })
+  )
 
-      if (existing) {
-        skipped++
-        continue
+  const toImport = items.filter((i) => !skippedNames.has(`${i.name}::${i.collectionId ?? '__null__'}`))
+  const skipped = items.length - toImport.length
+
+  if (toImport.length === 0) return { imported: 0, skipped, errors: [], icons: [] }
+
+  // Process + upload all in parallel
+  type UploadResult =
+    | { ok: true; row: Record<string, unknown>; storagePath: string }
+    | { ok: false; name: string; error: string }
+
+  const uploadResults = await Promise.all(
+    toImport.map(async (item): Promise<UploadResult> => {
+      try {
+        const sanitized = sanitizeSvg(item.svgContent)
+        const normalized = normalizeSvg(sanitized)
+        const { width, height } = extractSvgDimensions(normalized)
+        const iconId = crypto.randomUUID()
+        const storagePath = `${user.id}/${iconId}.svg`
+        const { error } = await supabase.storage
+          .from('icons')
+          .upload(storagePath, await new Blob([normalized], { type: 'image/svg+xml' }).arrayBuffer(), {
+            contentType: 'image/svg+xml',
+            upsert: false,
+          })
+        if (error) return { ok: false, name: item.name, error: 'storage error' }
+        return {
+          ok: true,
+          storagePath,
+          row: {
+            id: iconId,
+            user_id: user.id,
+            collection_id: item.collectionId ?? null,
+            name: item.name,
+            svg_content: normalized,
+            storage_path: storagePath,
+            width,
+            height,
+            source: item.source,
+            source_url: item.sourceUrl ?? null,
+            is_favorite: false,
+            metadata: {},
+          },
+        }
+      } catch (err) {
+        return { ok: false, name: item.name, error: err instanceof Error ? err.message : 'unknown error' }
       }
+    })
+  )
 
-      // Upload SVG to storage
-      const iconId = crypto.randomUUID()
-      const storagePath = `${user.id}/${iconId}.svg`
-      const blob = new Blob([normalized], { type: 'image/svg+xml' })
-      const arrayBuffer = await blob.arrayBuffer()
+  const successful = uploadResults.filter((r): r is Extract<UploadResult, { ok: true }> => r.ok)
+  const errors: string[] = uploadResults
+    .filter((r): r is Extract<UploadResult, { ok: false }> => !r.ok)
+    .map((r) => `${r.name}: ${r.error}`)
 
-      const { error: storageError } = await supabase.storage
-        .from('icons')
-        .upload(storagePath, arrayBuffer, {
-          contentType: 'image/svg+xml',
-          upsert: false,
-        })
-
-      if (storageError) {
-        errors.push(`${item.name}: storage error`)
-        continue
-      }
-
-      // Insert metadata and return the created row
-      const { data: insertedIcon, error: dbError } = await supabase
-        .from('icons')
-        .insert({
-          id: iconId,
-          user_id: user.id,
-          collection_id: item.collectionId ?? null,
-          name: item.name,
-          svg_content: normalized,
-          storage_path: storagePath,
-          width,
-          height,
-          source: item.source,
-          source_url: item.sourceUrl ?? null,
-          is_favorite: false,
-          metadata: {},
-        })
-        .select()
-        .single()
-
-      if (dbError) {
-        await supabase.storage.from('icons').remove([storagePath])
-        errors.push(`${item.name}: ${dbError.message}`)
-        continue
-      }
-
-      icons.push({ ...insertedIcon, tags: [] })
-      imported++
-    } catch (err) {
-      errors.push(`${item.name}: ${err instanceof Error ? err.message : 'unknown error'}`)
+  let icons: Icon[] = []
+  if (successful.length > 0) {
+    const { data, error: dbError } = await supabase
+      .from('icons')
+      .insert(successful.map((r) => r.row))
+      .select()
+    if (dbError) {
+      await supabase.storage.from('icons').remove(successful.map((r) => r.storagePath))
+      errors.push(...successful.map((r) => `${(r.row.name as string)}: db error`))
+    } else {
+      icons = (data ?? []).map((i: any) => ({ ...i, tags: [] }))
     }
   }
 
-  if (imported > 0) revalidatePath('/', 'layout')
-  return { imported, skipped, errors, icons }
+  if (icons.length > 0) revalidatePath('/library', 'layout')
+  return { imported: icons.length, skipped, errors, icons }
 }
 
 function getRasterMimeType(contentType: string, url: string): string | null {

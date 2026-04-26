@@ -1,20 +1,25 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import Fuse from 'fuse.js'
-import type { Icon, SortOrder, Tag } from '@/types'
+import { getIcons } from '@/actions/icons'
+import type { Icon, SortOrder } from '@/types'
 
 type UseIconsOptions = {
   initialIcons: Icon[]
+  initialHasMore: boolean
   collectionId?: string | null
 }
 
-export function useIcons({ initialIcons, collectionId }: UseIconsOptions) {
+export function useIcons({ initialIcons, initialHasMore, collectionId }: UseIconsOptions) {
   const [icons, setIcons] = useState<Icon[]>(initialIcons)
+  const [hasMore, setHasMore] = useState(initialHasMore)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [query, setQuery] = useState('')
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
   const [sortOrder, setSortOrder] = useState<SortOrder>('date-desc')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const offsetRef = useRef(initialIcons.length)
 
   const fuse = useMemo(
     () =>
@@ -53,6 +58,19 @@ export function useIcons({ initialIcons, collectionId }: UseIconsOptions) {
     return result
   }, [icons, query, selectedTagIds, sortOrder, fuse])
 
+  const loadMore = useCallback(async () => {
+    if (!hasMore || isLoadingMore) return
+    setIsLoadingMore(true)
+    try {
+      const result = await getIcons(collectionId, offsetRef.current)
+      setIcons((prev) => [...prev, ...result.icons])
+      setHasMore(result.hasMore)
+      offsetRef.current += result.icons.length
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }, [hasMore, isLoadingMore, collectionId])
+
   const toggleSelect = useCallback((id: string, multi = false) => {
     setSelectedIds((prev) => {
       const next = new Set(prev)
@@ -88,15 +106,20 @@ export function useIcons({ initialIcons, collectionId }: UseIconsOptions) {
 
   const removeIcons = useCallback((ids: string[]) => {
     setIcons((prev) => prev.filter((i) => !ids.includes(i.id)))
+    offsetRef.current = Math.max(0, offsetRef.current - ids.length)
   }, [])
 
   const addIcons = useCallback((newIcons: Icon[]) => {
     setIcons((prev) => [...newIcons, ...prev])
+    offsetRef.current += newIcons.length
   }, [])
 
   return {
     icons,
     filteredIcons,
+    hasMore,
+    isLoadingMore,
+    loadMore,
     query,
     setQuery,
     selectedTagIds,

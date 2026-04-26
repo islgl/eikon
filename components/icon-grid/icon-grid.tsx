@@ -1,7 +1,8 @@
 'use client'
 
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { Loader2 } from 'lucide-react'
 import type { Icon, ViewMode } from '@/types'
 import { useContainerSize } from '@/lib/hooks/use-container-size'
 import { IconCard } from './icon-card'
@@ -20,6 +21,9 @@ type IconGridProps = {
   onOpenDetail: (id: string) => void
   onUpdateIcon: (id: string, changes: Partial<Icon>) => void
   onRemoveIcons: (ids: string[]) => void
+  hasMore?: boolean
+  isLoadingMore?: boolean
+  onLoadMore?: () => void
 }
 
 export function IconGrid({
@@ -32,13 +36,15 @@ export function IconGrid({
   onOpenDetail,
   onUpdateIcon,
   onRemoveIcons,
+  hasMore,
+  isLoadingMore,
+  onLoadMore,
 }: IconGridProps) {
   const parentRef = useRef<HTMLDivElement>(null)
   const { width } = useContainerSize(parentRef)
 
-  const cardSize = iconSize + 48 // icon + space for buttons + name
+  const cardSize = iconSize + 48
 
-  // Grid mode: chunk icons into rows
   const cols = Math.max(1, Math.floor((width + GRID_GAP) / (cardSize + GRID_GAP)))
   const gridRows = useMemo(() => {
     const rows: Icon[][] = []
@@ -48,7 +54,7 @@ export function IconGrid({
     return rows
   }, [icons, cols])
 
-  const rowHeight = viewMode === 'grid' ? cardSize + 24 : LIST_ROW_HEIGHT // card + name label
+  const rowHeight = viewMode === 'grid' ? cardSize + 24 : LIST_ROW_HEIGHT
 
   const virtualizer = useVirtualizer({
     count: viewMode === 'grid' ? gridRows.length : icons.length,
@@ -56,6 +62,21 @@ export function IconGrid({
     estimateSize: () => rowHeight + GRID_GAP,
     overscan: 4,
   })
+
+  // Trigger loadMore when within 3 rows of the bottom
+  useEffect(() => {
+    if (!hasMore || !onLoadMore || isLoadingMore) return
+    const el = parentRef.current
+    if (!el) return
+    const handleScroll = () => {
+      const threshold = (rowHeight + GRID_GAP) * 3
+      if (el.scrollHeight - el.scrollTop - el.clientHeight < threshold) {
+        onLoadMore()
+      }
+    }
+    el.addEventListener('scroll', handleScroll, { passive: true })
+    return () => el.removeEventListener('scroll', handleScroll)
+  }, [hasMore, isLoadingMore, onLoadMore, rowHeight])
 
   if (icons.length === 0) {
     return (
@@ -133,6 +154,12 @@ export function IconGrid({
           )
         })}
       </div>
+
+      {isLoadingMore && (
+        <div className="flex justify-center py-4">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        </div>
+      )}
     </div>
   )
 }

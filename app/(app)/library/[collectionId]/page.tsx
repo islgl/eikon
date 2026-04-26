@@ -19,8 +19,8 @@ export default async function CollectionPage({
 
   if (!collection) notFound()
 
-  const icons = await getIcons(collectionId)
+  const { icons, hasMore } = await getIcons(collectionId)
   const title = `${collection.emoji ?? ''} ${collection.name}`.trim()
 
-  return <LibraryView icons={icons} collectionId={collectionId} title={title} />
+  return <LibraryView icons={icons} hasMore={hasMore} collectionId={collectionId} title={title} />
 }

@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import type { Icon, Tag } from '@/types'
 
+export const ICONS_PAGE_SIZE = 100
+
 async function getUser() {
   const supabase = await createClient()
   const { data: { user }, error } = await supabase.auth.getUser()
@@ -11,7 +13,10 @@ async function getUser() {
   return { supabase, user }
 }
 
-export async function getIcons(collectionId?: string | null): Promise<Icon[]> {
+export async function getIcons(
+  collectionId?: string | null,
+  offset = 0
+): Promise<{ icons: Icon[]; hasMore: boolean }> {
   const { supabase, user } = await getUser()
 
   let query = supabase
@@ -19,6 +24,7 @@ export async function getIcons(collectionId?: string | null): Promise<Icon[]> {
     .select(`*, tags:icon_tags(tag:tags(*))`)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
+    .range(offset, offset + ICONS_PAGE_SIZE - 1)
 
   if (collectionId === 'favorites') {
     query = query.eq('is_favorite', true)
@@ -29,10 +35,12 @@ export async function getIcons(collectionId?: string | null): Promise<Icon[]> {
   const { data, error } = await query
   if (error) throw error
 
-  return (data ?? []).map((icon: any) => ({
+  const icons = (data ?? []).map((icon: any) => ({
     ...icon,
     tags: icon.tags?.map((t: any) => t.tag).filter(Boolean) ?? [],
   }))
+
+  return { icons, hasMore: icons.length === ICONS_PAGE_SIZE }
 }
 
 export async function updateIcon(
@@ -46,20 +54,17 @@ export async function updateIcon(
     .eq('id', id)
     .eq('user_id', user.id)
   if (error) throw error
-  revalidatePath('/', 'layout')
 }
 
 export async function deleteIcons(ids: string[]): Promise<void> {
   const { supabase, user } = await getUser()
 
-  // Fetch storage paths to clean up
   const { data: icons } = await supabase
     .from('icons')
     .select('id, storage_path')
     .in('id', ids)
     .eq('user_id', user.id)
 
-  // Delete storage files
   const storagePaths = icons?.filter((i: any) => i.storage_path).map((i: any) => i.storage_path) ?? []
   if (storagePaths.length > 0) {
     await supabase.storage.from('icons').remove(storagePaths)
@@ -71,7 +76,7 @@ export async function deleteIcons(ids: string[]): Promise<void> {
     .in('id', ids)
     .eq('user_id', user.id)
   if (error) throw error
-  revalidatePath('/', 'layout')
+  revalidatePath('/library', 'layout')
 }
 
 export async function toggleFavorite(id: string, isFavorite: boolean): Promise<void> {
@@ -87,7 +92,6 @@ export async function toggleFavorite(id: string, isFavorite: boolean): Promise<v
 export async function setIconTags(iconId: string, tagIds: string[]): Promise<void> {
   const { supabase, user } = await getUser()
 
-  // Verify ownership
   const { error: ownerErr } = await supabase
     .from('icons')
     .select('id')
@@ -96,7 +100,6 @@ export async function setIconTags(iconId: string, tagIds: string[]): Promise<voi
     .single()
   if (ownerErr) throw ownerErr
 
-  // Replace all tags
   await supabase.from('icon_tags').delete().eq('icon_id', iconId)
   if (tagIds.length > 0) {
     const { error } = await supabase
@@ -104,7 +107,6 @@ export async function setIconTags(iconId: string, tagIds: string[]): Promise<voi
       .insert(tagIds.map((tid) => ({ icon_id: iconId, tag_id: tid })))
     if (error) throw error
   }
-  revalidatePath('/', 'layout')
 }
 
 export async function moveIcons(iconIds: string[], collectionId: string | null): Promise<void> {
@@ -115,7 +117,7 @@ export async function moveIcons(iconIds: string[], collectionId: string | null):
     .in('id', iconIds)
     .eq('user_id', user.id)
   if (error) throw error
-  revalidatePath('/', 'layout')
+  revalidatePath('/library', 'layout')
 }
 
 export async function getTags(): Promise<Tag[]> {
@@ -148,7 +150,6 @@ export async function deleteTag(id: string): Promise<void> {
     .eq('id', id)
     .eq('user_id', user.id)
   if (error) throw error
-  revalidatePath('/', 'layout')
 }
 
 export async function getIconSignedUrl(iconId: string): Promise<string> {
@@ -162,7 +163,7 @@ export async function getIconSignedUrl(iconId: string): Promise<string> {
   if (!icon?.storage_path) throw new Error('Icon not found')
   const { data } = await supabase.storage
     .from('icons')
-    .createSignedUrl(icon.storage_path, 604800) // 7 days
+    .createSignedUrl(icon.storage_path, 604800)
   if (!data?.signedUrl) throw new Error('Failed to generate URL')
   return data.signedUrl
 }
