@@ -10,6 +10,7 @@ import { copyToClipboard, downloadSvg, downloadPng } from '@/lib/utils/copy'
 import { isRasterWrappedSvg } from '@/lib/utils/svg'
 import { toggleFavorite, deleteIcons, getIconSignedUrl, updateIcon } from '@/actions/icons'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { IconPreview } from './icon-preview'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -122,10 +123,10 @@ export function IconCard({ icon, size, selected, active, onSelect, onOpenDetail,
 
         {/* SVG preview — centered in remaining space */}
         <div className="flex-1 flex items-center justify-center min-h-0">
-          <div
+          <IconPreview
+            svgContent={icon.svg_content}
+            className="text-foreground"
             style={{ width: size, height: size }}
-            className="icon-preview text-foreground"
-            dangerouslySetInnerHTML={{ __html: icon.svg_content }}
           />
         </div>
 

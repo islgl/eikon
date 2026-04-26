@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { IconPreview } from '@/components/icon-grid/icon-preview'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -166,11 +167,15 @@ export function IconDetailPanel({ icon, onClose, onUpdate }: IconDetailPanelProp
 
           {/* Preview */}
           <div className="flex items-center justify-center h-32 rounded-lg border border-border bg-muted/20">
-            <div
-              className="icon-preview h-16 w-16"
-              style={{ color: previewColor }}
-              dangerouslySetInnerHTML={{ __html: previewSvg }}
-            />
+            {isRaster ? (
+              <IconPreview svgContent={previewSvg} className="h-16 w-16" />
+            ) : (
+              <div
+                className="icon-preview h-16 w-16"
+                style={{ color: previewColor }}
+                dangerouslySetInnerHTML={{ __html: previewSvg }}
+              />
+            )}
           </div>
 
           {/* Color picker — SVG only */}

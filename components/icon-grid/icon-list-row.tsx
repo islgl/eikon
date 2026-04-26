@@ -8,6 +8,7 @@ import { copyToClipboard } from '@/lib/utils/copy'
 import { toggleFavorite, deleteIcons } from '@/actions/icons'
 import { Badge } from '@/components/ui/badge'
 import { getTagColor } from '@/lib/utils/color'
+import { IconPreview } from './icon-preview'
 
 type IconListRowProps = {
   icon: Icon
@@ -49,9 +50,9 @@ export function IconListRow({ icon, selected, active, onSelect, onOpenDetail, on
       onDoubleClick={onOpenDetail}
     >
       {/* Icon preview */}
-      <div
-        className="icon-preview h-6 w-6 flex items-center justify-center shrink-0 text-foreground"
-        dangerouslySetInnerHTML={{ __html: icon.svg_content }}
+      <IconPreview
+        svgContent={icon.svg_content}
+        className="h-6 w-6 flex items-center justify-center shrink-0 text-foreground"
       />
 
       {/* Name */}

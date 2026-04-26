@@ -8,6 +8,7 @@ import { snapCenterToCursor } from '@dnd-kit/modifiers'
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { Sidebar } from './sidebar'
 import { CommandPalette } from '@/components/command/command-palette'
+import { IconPreview } from '@/components/icon-grid/icon-preview'
 import { useCommandPalette } from '@/lib/hooks/use-command'
 import { useCollections } from '@/lib/hooks/use-collections'
 import { DndMoveProvider, useDndMove } from '@/lib/hooks/use-dnd-move'
@@ -77,10 +78,10 @@ function AppShellInner({ collections, tags, user, children }: AppShellProps) {
       <DragOverlay dropAnimation={null}>
         {activeDrag && (
           <div className="flex flex-col items-center gap-2 rounded-xl bg-background/90 backdrop-blur-sm shadow-2xl ring-1 ring-black/5 pointer-events-none px-3 pt-3 pb-2.5">
-            <div
-              className="icon-preview text-foreground"
+            <IconPreview
+              svgContent={activeDrag.svgContent}
+              className="text-foreground"
               style={{ width: 36, height: 36 }}
-              dangerouslySetInnerHTML={{ __html: activeDrag.svgContent }}
             />
             <span className="text-[10px] text-muted-foreground max-w-20 truncate leading-none">
               {activeDrag.name}
