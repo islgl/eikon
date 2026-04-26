@@ -3,6 +3,8 @@
 import type { CopyFormat } from '@/types'
 import { svgToDataUri, svgToJsx } from './svg'
 
+const OBJECT_URL_RELEASE_DELAY_MS = 0
+
 export async function copyToClipboard(text: string): Promise<boolean> {
   try {
     if (navigator.clipboard?.writeText) {
@@ -37,16 +39,22 @@ export function formatIconForCopy(svgContent: string, name: string, format: Copy
   }
 }
 
-export async function downloadSvg(svgContent: string, filename: string): Promise<void> {
-  const blob = new Blob([svgContent], { type: 'image/svg+xml' })
-  const url = URL.createObjectURL(blob)
+function triggerDownload(url: string, filename: string): void {
   const a = document.createElement('a')
   a.href = url
-  a.download = `${filename}.svg`
+  a.download = filename
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
-  URL.revokeObjectURL(url)
+
+  // Let the browser claim the blob URL before cleaning it up.
+  setTimeout(() => URL.revokeObjectURL(url), OBJECT_URL_RELEASE_DELAY_MS)
+}
+
+export async function downloadSvg(svgContent: string, filename: string): Promise<void> {
+  const blob = new Blob([svgContent], { type: 'image/svg+xml' })
+  const url = URL.createObjectURL(blob)
+  triggerDownload(url, `${filename}.svg`)
 }
 
 export async function downloadPng(svgContent: string, filename: string, size: number): Promise<void> {
@@ -59,24 +67,28 @@ export async function downloadPng(svgContent: string, filename: string, size: nu
   const blob = new Blob([svgContent], { type: 'image/svg+xml' })
   const url = URL.createObjectURL(blob)
 
-  await new Promise<void>((resolve, reject) => {
-    img.onload = () => resolve()
-    img.onerror = reject
-    img.src = url
+  try {
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve()
+      img.onerror = reject
+      img.src = url
+    })
+
+    ctx.drawImage(img, 0, 0, size, size)
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+
+  const pngBlob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error('Failed to generate PNG blob'))
+        return
+      }
+
+      resolve(blob)
+    }, 'image/png')
   })
 
-  ctx.drawImage(img, 0, 0, size, size)
-  URL.revokeObjectURL(url)
-
-  canvas.toBlob((blob) => {
-    if (!blob) return
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${filename}-${size}px.png`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }, 'image/png')
+  triggerDownload(URL.createObjectURL(pngBlob), `${filename}-${size}px.png`)
 }
