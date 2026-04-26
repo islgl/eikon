@@ -3,13 +3,11 @@
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { Upload, Loader2 } from 'lucide-react'
-import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { sanitizeSvg, extractSvgName } from '@/lib/utils/svg'
-import { ACCEPTED_IMAGE_TYPES, ACCEPTED_EXTENSIONS_LABEL, isSvgFile, isIcnsFile, icnsFileToSvgContent, rasterFileToSvgContent } from '@/lib/utils/image'
-import { importIcons } from '@/actions/import'
-import type { Icon, ImportItem } from '@/types'
+import { ACCEPTED_IMAGE_TYPES, ACCEPTED_EXTENSIONS_LABEL } from '@/lib/utils/image'
+import { runDirectImport } from '@/lib/utils/direct-import-client'
+import type { Icon } from '@/types'
 
 type EmptyDropzoneProps = {
   collectionId: string | null
@@ -21,35 +19,9 @@ export function EmptyDropzone({ collectionId, onImported, onOpenDialog }: EmptyD
   const [loading, setLoading] = useState(false)
 
   const onDrop = useCallback(async (accepted: File[]) => {
-    if (accepted.length === 0) {
-      toast.error('No supported files found')
-      return
-    }
-
     setLoading(true)
     try {
-      const items: ImportItem[] = await Promise.all(
-        accepted.map(async (file): Promise<ImportItem> => ({
-          name: extractSvgName(file.name),
-          svgContent: isSvgFile(file)
-            ? sanitizeSvg(await file.text())
-            : isIcnsFile(file)
-              ? await icnsFileToSvgContent(file)
-              : await rasterFileToSvgContent(file),
-          collectionId,
-          source: 'upload' as const,
-        }))
-      )
-
-      const result = await importIcons(items)
-      if (result.imported > 0) {
-        toast.success(`Imported ${result.imported} icon${result.imported > 1 ? 's' : ''}`)
-        onImported(result.icons)
-      }
-      if (result.skipped > 0) toast.info(`Skipped ${result.skipped} duplicate${result.skipped > 1 ? 's' : ''}`)
-      if (result.errors.length > 0) toast.error(`${result.errors.length} failed`)
-    } catch {
-      toast.error('Import failed')
+      await runDirectImport(accepted, collectionId, onImported)
     } finally {
       setLoading(false)
     }
