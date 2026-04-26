@@ -14,6 +14,9 @@
 - Drop target collision detection aligned with cursor position (`snapCenterToCursor` on `DndContext`)
 - Import button repositioned from title row to filter bar right end
 
+### Fixed
+- Icon SVG / PNG downloads no longer stall when the browser receives the request but never starts saving the file
+
 ---
 
 ## [0.2.0] — 2026-04-21
