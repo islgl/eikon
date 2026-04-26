@@ -2,9 +2,8 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { ICONS_PAGE_SIZE } from '@/lib/constants'
 import type { Icon, Tag } from '@/types'
-
-export const ICONS_PAGE_SIZE = 100
 
 async function getUser() {
   const supabase = await createClient()
