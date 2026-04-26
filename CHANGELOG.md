@@ -13,9 +13,11 @@
 ### Changed
 - Drop target collision detection aligned with cursor position (`snapCenterToCursor` on `DndContext`)
 - Import button repositioned from title row to filter bar right end
+- PNG downloads now preserve the icon's original dimensions by default and keep aspect ratio when exporting smaller sizes
 
 ### Fixed
 - Icon SVG / PNG downloads no longer stall when the browser receives the request but never starts saving the file
+- PNG export no longer fails on legacy SVG files that include broken XML declarations or `DOCTYPE` headers
 
 ---
 

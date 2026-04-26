@@ -26,7 +26,6 @@ type IconDetailPanelProps = {
   icon: Icon
   onClose: () => void
   onUpdate: (changes: Partial<Icon>) => void
-  onDelete: () => void
 }
 
 const COPY_FORMATS: { format: CopyFormat; label: string }[] = [
@@ -37,7 +36,7 @@ const COPY_FORMATS: { format: CopyFormat; label: string }[] = [
 
 const PNG_SIZES = [16, 24, 32, 48, 64, 128]
 
-export function IconDetailPanel({ icon, onClose, onUpdate, onDelete }: IconDetailPanelProps) {
+export function IconDetailPanel({ icon, onClose, onUpdate }: IconDetailPanelProps) {
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(icon.name)
   const [previewColor, setPreviewColor] = useState('#000000')
@@ -279,6 +278,9 @@ export function IconDetailPanel({ icon, onClose, onUpdate, onDelete }: IconDetai
                   <ChevronDown className="h-3 w-3 ml-auto" />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" className="w-36">
+                  <DropdownMenuItem onClick={() => downloadPng(previewSvg, icon.name)}>
+                    Original{icon.width && icon.height ? ` (${icon.width}×${icon.height})` : ''}
+                  </DropdownMenuItem>
                   {PNG_SIZES.map((size) => (
                     <DropdownMenuItem
                       key={size}

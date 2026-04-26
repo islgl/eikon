@@ -217,8 +217,8 @@ export function IconCard({ icon, size, selected, active, onSelect, onOpenDetail,
             <Download className="h-3.5 w-3.5 mr-2" /> Download SVG
           </ContextMenuItem>
         )}
-        <ContextMenuItem onClick={() => downloadPng(icon.svg_content, icon.name, 64)}>
-          <Download className="h-3.5 w-3.5 mr-2" /> Download PNG (64px)
+        <ContextMenuItem onClick={() => downloadPng(icon.svg_content, icon.name)}>
+          <Download className="h-3.5 w-3.5 mr-2" /> Download PNG
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem onClick={startRename}>

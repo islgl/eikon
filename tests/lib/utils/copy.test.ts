@@ -27,6 +27,7 @@ function replaceGlobal(name: string, value: unknown): Restore {
 
 function installDownloadDom() {
   const events: string[] = []
+  const blobs: Blob[] = []
   let nextBlobId = 1
 
   const anchor = {
@@ -38,8 +39,8 @@ function installDownloadDom() {
   }
 
   const canvasContext = {
-    drawImage() {
-      events.push('drawImage')
+    drawImage(_img: unknown, _x: number, _y: number, width: number, height: number) {
+      events.push(`drawImage:${width}x${height}`)
     },
   }
 
@@ -94,8 +95,9 @@ function installDownloadDom() {
   }
 
   const urlStub = {
-    createObjectURL() {
+    createObjectURL(blob: Blob) {
       const nextUrl = `blob:mock-${nextBlobId++}`
+      blobs.push(blob)
       events.push(`createObjectURL:${nextUrl}`)
       return nextUrl
     },
@@ -112,6 +114,7 @@ function installDownloadDom() {
 
   return {
     anchor,
+    blobs,
     events,
     restore() {
       restores.reverse().forEach((restore) => restore())
@@ -157,7 +160,7 @@ test('downloadPng keeps the downloadable blob URL alive until after the click ta
     'canvas:getContext',
     'createObjectURL:blob:mock-1',
     'image:src:blob:mock-1',
-    'drawImage',
+    'drawImage:64x64',
     'revokeObjectURL:blob:mock-1',
     'canvas:toBlob:image/png',
     'createObjectURL:blob:mock-2',
@@ -175,7 +178,7 @@ test('downloadPng keeps the downloadable blob URL alive until after the click ta
     'canvas:getContext',
     'createObjectURL:blob:mock-1',
     'image:src:blob:mock-1',
-    'drawImage',
+    'drawImage:64x64',
     'revokeObjectURL:blob:mock-1',
     'canvas:toBlob:image/png',
     'createObjectURL:blob:mock-2',
@@ -184,5 +187,65 @@ test('downloadPng keeps the downloadable blob URL alive until after the click ta
     'click:a',
     'remove',
     'revokeObjectURL:blob:mock-2',
+  ])
+})
+
+test('downloadPng normalizes malformed XML/DOCTYPE SVG before rasterizing', async (t) => {
+  const env = installDownloadDom()
+  t.after(() => env.restore())
+
+  await downloadPng(
+    '<?xml version="1.0" standal?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"><svg viewBox="0 0 24 24"><path d="M0 0h24v24H0z"/></svg>',
+    'legacy',
+    64
+  )
+
+  assert.equal(env.blobs.length >= 1, true)
+
+  const rasterSourceSvg = await env.blobs[0].text()
+
+  assert.equal(rasterSourceSvg.includes('<?xml'), false)
+  assert.equal(rasterSourceSvg.includes('<!DOCTYPE'), false)
+  assert.match(rasterSourceSvg, /<svg[^>]*xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)
+})
+
+test('downloadPng preserves the original SVG dimensions by default', async (t) => {
+  const env = installDownloadDom()
+  t.after(() => env.restore())
+
+  await downloadPng(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="250" height="200" viewBox="0 0 250 200"><path d="M0 0h250v200H0z"/></svg>',
+    'cloudflare'
+  )
+
+  assert.equal(env.anchor.download, 'cloudflare.png')
+  assert.deepEqual(env.events.slice(0, 6), [
+    'create:canvas',
+    'canvas:getContext',
+    'createObjectURL:blob:mock-1',
+    'image:src:blob:mock-1',
+    'drawImage:250x200',
+    'revokeObjectURL:blob:mock-1',
+  ])
+})
+
+test('downloadPng keeps aspect ratio when exporting a smaller size', async (t) => {
+  const env = installDownloadDom()
+  t.after(() => env.restore())
+
+  await downloadPng(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="250" height="200" viewBox="0 0 250 200"><path d="M0 0h250v200H0z"/></svg>',
+    'cloudflare',
+    64
+  )
+
+  assert.equal(env.anchor.download, 'cloudflare-64px.png')
+  assert.deepEqual(env.events.slice(0, 6), [
+    'create:canvas',
+    'canvas:getContext',
+    'createObjectURL:blob:mock-1',
+    'image:src:blob:mock-1',
+    'drawImage:64x51',
+    'revokeObjectURL:blob:mock-1',
   ])
 })

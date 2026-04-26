@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import type { Icon, Tag } from '@/types'
+import type { Icon } from '@/types'
 import { useIcons } from '@/lib/hooks/use-icons'
 import { useDndMove } from '@/lib/hooks/use-dnd-move'
 import { moveIcons } from '@/actions/icons'
@@ -26,13 +26,14 @@ export function LibraryView({ icons: initialIcons, collectionId, title }: Librar
 
   const iconState = useIcons({ initialIcons, collectionId })
   const { register } = useDndMove()
+  const { removeIcons } = iconState
 
   useEffect(() => {
     register(async (iconIds, targetCollectionId) => {
-      iconState.removeIcons(iconIds)
+      removeIcons(iconIds)
       await moveIcons(iconIds, targetCollectionId)
     })
-  }, [register, iconState.removeIcons])
+  }, [register, removeIcons])
 
   const detailIcon = detailIconId
     ? iconState.filteredIcons.find((i) => i.id === detailIconId) ?? null
@@ -88,10 +89,6 @@ export function LibraryView({ icons: initialIcons, collectionId, title }: Librar
             icon={detailIcon}
             onClose={() => setDetailIconId(null)}
             onUpdate={(changes) => iconState.updateIcon(detailIcon.id, changes)}
-            onDelete={() => {
-              iconState.removeIcons([detailIcon.id])
-              setDetailIconId(null)
-            }}
           />
         )}
       </div>

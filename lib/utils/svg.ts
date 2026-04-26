@@ -1,20 +1,5 @@
 // SVG parsing, sanitization, and dimension extraction utilities
 
-const ALLOWED_SVG_TAGS = new Set([
-  'svg', 'g', 'path', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon',
-  'text', 'tspan', 'textPath', 'image', 'use', 'defs', 'symbol', 'marker', 'clipPath',
-  'mask', 'filter', 'feBlend', 'feColorMatrix', 'feComponentTransfer', 'feComposite',
-  'feConvolveMatrix', 'feDiffuseLighting', 'feDisplacementMap', 'feFlood', 'feGaussianBlur',
-  'feImage', 'feMerge', 'feMergeNode', 'feMorphology', 'feOffset', 'feSpecularLighting',
-  'feTile', 'feTurbulence', 'linearGradient', 'radialGradient', 'stop', 'title', 'desc',
-])
-
-const FORBIDDEN_ATTRS = new Set([
-  'onload', 'onerror', 'onclick', 'onmouseover', 'onfocus', 'onblur',
-  'onchange', 'onkeydown', 'onkeypress', 'onkeyup', 'onmousedown',
-  'onmouseenter', 'onmouseleave', 'onmouseup', 'onscroll', 'onsubmit',
-])
-
 export function sanitizeSvg(svgString: string): string {
   // Quick check: must start with <svg
   const trimmed = svgString.trim()
@@ -23,7 +8,7 @@ export function sanitizeSvg(svgString: string): string {
   }
 
   // Strip script tags and event handlers (works for both browser + server)
-  let clean = svgString
+  const clean = svgString
     .replace(/<script[\s\S]*?<\/script>/gi, '')
     .replace(/<script[^>]*>/gi, '')
     .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
@@ -64,8 +49,14 @@ export function extractSvgName(filename: string): string {
 }
 
 export function normalizeSvg(svgString: string): string {
+  // Remove XML/DOCTYPE wrappers that browsers tolerate in markup mode
+  // but may reject when decoding the SVG as an image source.
+  let svg = svgString
+    .replace(/^\s*<\?xml[\s\S]*?\?>\s*/i, '')
+    .replace(/<!DOCTYPE[\s\S]*?>\s*/gi, '')
+    .trim()
+
   // Ensure SVG has xmlns
-  let svg = svgString.trim()
   if (!svg.includes('xmlns=')) {
     svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"')
   }
@@ -91,7 +82,7 @@ export function svgToJsx(svgString: string, componentName: string): string {
     .replace(/[^a-zA-Z0-9]/g, '')
 
   // Convert SVG attributes to JSX
-  let jsx = svgString
+  const jsx = svgString
     .replace(/class=/g, 'className=')
     .replace(/for=/g, 'htmlFor=')
     .replace(/stroke-width=/g, 'strokeWidth=')

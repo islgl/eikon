@@ -1,7 +1,7 @@
 'use client'
 
 import type { CopyFormat } from '@/types'
-import { svgToDataUri, svgToJsx } from './svg'
+import { extractSvgDimensions, normalizeSvg, svgToDataUri, svgToJsx } from './svg'
 
 const OBJECT_URL_RELEASE_DELAY_MS = 0
 
@@ -52,29 +52,56 @@ function triggerDownload(url: string, filename: string): void {
 }
 
 export async function downloadSvg(svgContent: string, filename: string): Promise<void> {
-  const blob = new Blob([svgContent], { type: 'image/svg+xml' })
+  const blob = new Blob([normalizeSvg(svgContent)], { type: 'image/svg+xml' })
   const url = URL.createObjectURL(blob)
   triggerDownload(url, `${filename}.svg`)
 }
 
-export async function downloadPng(svgContent: string, filename: string, size: number): Promise<void> {
+function resolvePngDimensions(svgContent: string, size?: number): { width: number; height: number } {
+  const normalizedSvg = normalizeSvg(svgContent)
+  const original = extractSvgDimensions(normalizedSvg)
+
+  if (!size) {
+    return {
+      width: Math.max(1, Math.round(original.width)),
+      height: Math.max(1, Math.round(original.height)),
+    }
+  }
+
+  const longestEdge = Math.max(original.width, original.height)
+  if (!Number.isFinite(longestEdge) || longestEdge <= 0) {
+    return { width: size, height: size }
+  }
+
+  const scale = size / longestEdge
+  return {
+    width: Math.max(1, Math.round(original.width * scale)),
+    height: Math.max(1, Math.round(original.height * scale)),
+  }
+}
+
+export async function downloadPng(svgContent: string, filename: string, size?: number): Promise<void> {
+  const normalizedSvg = normalizeSvg(svgContent)
+  const dimensions = resolvePngDimensions(normalizedSvg, size)
   const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
+  canvas.width = dimensions.width
+  canvas.height = dimensions.height
   const ctx = canvas.getContext('2d')!
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
 
   const img = new Image()
-  const blob = new Blob([svgContent], { type: 'image/svg+xml' })
+  const blob = new Blob([normalizedSvg], { type: 'image/svg+xml' })
   const url = URL.createObjectURL(blob)
 
   try {
     await new Promise<void>((resolve, reject) => {
       img.onload = () => resolve()
-      img.onerror = reject
+      img.onerror = () => reject(new Error('Failed to load SVG for PNG export'))
       img.src = url
     })
 
-    ctx.drawImage(img, 0, 0, size, size)
+    ctx.drawImage(img, 0, 0, dimensions.width, dimensions.height)
   } finally {
     URL.revokeObjectURL(url)
   }
@@ -90,5 +117,6 @@ export async function downloadPng(svgContent: string, filename: string, size: nu
     }, 'image/png')
   })
 
-  triggerDownload(URL.createObjectURL(pngBlob), `${filename}-${size}px.png`)
+  const outputName = size ? `${filename}-${size}px.png` : `${filename}.png`
+  triggerDownload(URL.createObjectURL(pngBlob), outputName)
 }
