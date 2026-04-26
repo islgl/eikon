@@ -25,6 +25,7 @@
 - PNG export no longer fails on legacy SVG files that include broken XML declarations or `DOCTYPE` headers
 - Large image imports no longer fail at around 1MB due to the default Server Action body limit
 - Imports from Favorites no longer attempt to target a virtual `favorites` collection ID
+- App metadata icon routes (`/icon.svg`, `/favicon.ico`, etc.) no longer get redirected to login by the auth proxy
 
 ---
 
