@@ -3,6 +3,14 @@
 ## [Unreleased]
 
 ### Added
+- Drag image files directly onto the icon grid to import — no Import button needed
+- Infinite scroll pagination: initial load capped at 100 icons, more loaded automatically on scroll
+
+### Changed
+- `importIcons`: parallel processing (batch dedup check + concurrent uploads + single batch DB insert) — N×3 round trips reduced to 3 regardless of file count
+- Removed unnecessary `revalidatePath` calls from single-icon mutations (rename, tags, move, delete tag) — client optimistic updates already reflect changes instantly
+
+### Added
 - Drag and drop icons onto sidebar collections to move them
 - Right-click context menu: Rename icon inline
 - Drag overlay follows cursor precisely with card preview
