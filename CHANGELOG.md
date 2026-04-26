@@ -9,26 +9,15 @@
 - GitHub icon link in toolbar top-right corner
 - Import button moved to filter bar; hover animation (icon nudges up) and pointer cursor
 - Eikon logo (Grid A variant) — SVG mark + favicon
-- Direct drag-and-drop file import into the main library content area (without opening the Import dialog first)
-- Backend multipart upload route for file imports with server-side raster processing
 
 ### Changed
 - Drop target collision detection aligned with cursor position (`snapCenterToCursor` on `DndContext`)
 - Import button repositioned from title row to filter bar right end
 - PNG downloads now preserve the icon's original dimensions by default and keep aspect ratio when exporting smaller sizes
-- File uploads now bypass the 1MB Server Action payload path and use backend processing instead
-- Oversized raster imports are automatically compressed server-side before being wrapped and stored
-- Next.js upload body limits increased to 25MB for import flows
 
 ### Fixed
 - Icon SVG / PNG downloads no longer stall when the browser receives the request but never starts saving the file
 - PNG export no longer fails on legacy SVG files that include broken XML declarations or `DOCTYPE` headers
-- Large image imports no longer fail at around 1MB due to the default Server Action body limit
-- Imports from Favorites no longer attempt to target a virtual `favorites` collection ID
-- App metadata icon routes (`/icon.svg`, `/favicon.ico`, etc.) no longer get redirected to login by the auth proxy
-- Brand icon now renders again on the login screen and sidebar, and shared logo assets stay publicly reachable through the auth proxy
-- Library and collection previews now render imported icons via SVG image data URLs, preventing production-only inline SVG rendering failures for imported assets
-- Persisted icon previews now load through an authenticated preview route instead of embedded data URLs, fixing blank imported icons in production and reducing oversized page payloads
 
 ---
 

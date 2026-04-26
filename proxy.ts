@@ -1,6 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { isPublicAssetPath } from '@/lib/proxy/public-routes'
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -28,9 +27,8 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const { pathname } = request.nextUrl
-  const isAuthPage = pathname.startsWith('/auth')
-  const isPublicRoute = isAuthPage || pathname === '/' || isPublicAssetPath(pathname)
+  const isAuthPage = request.nextUrl.pathname.startsWith('/auth')
+  const isPublicRoute = isAuthPage || request.nextUrl.pathname === '/'
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone()
@@ -48,7 +46,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon\\.ico$|icon(?:\\.[^/]+)?$|apple-icon(?:\\.[^/]+)?$|manifest(?:\\.webmanifest)?$|robots\\.txt$|sitemap\\.xml$|public/).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|public/).*)'],
 }

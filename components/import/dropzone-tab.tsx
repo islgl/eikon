@@ -2,14 +2,26 @@
 
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Upload, FileIcon, Loader2 } from 'lucide-react'
+import { Upload, FileIcon, X, Loader2, CheckCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { extractSvgName } from '@/lib/utils/svg'
-import { ACCEPTED_IMAGE_TYPES, ACCEPTED_EXTENSIONS_LABEL } from '@/lib/utils/image'
-import { runDirectImport } from '@/lib/utils/direct-import-client'
-import type { Icon } from '@/types'
+import { sanitizeSvg, extractSvgName } from '@/lib/utils/svg'
+import { ACCEPTED_IMAGE_TYPES, ACCEPTED_EXTENSIONS_LABEL, isSvgFile, isIcnsFile, icnsFileToSvgContent, rasterFileToSvgContent } from '@/lib/utils/image'
+import { importIcons } from '@/actions/import'
+import type { Icon, ImportItem } from '@/types'
+
+// Simple progress component
+function ProgressBar({ value }: { value: number }) {
+  return (
+    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+      <div
+        className="h-full bg-primary transition-all duration-300 rounded-full"
+        style={{ width: `${value}%` }}
+      />
+    </div>
+  )
+}
 
 type DropzoneTabProps = {
   collectionId: string | null
@@ -17,13 +29,16 @@ type DropzoneTabProps = {
 }
 
 type FileEntry = {
-  file: File
   name: string
+  svgContent: string
+  status: 'pending' | 'processing' | 'done' | 'error'
+  error?: string
 }
 
 export function DropzoneTab({ collectionId, onImported }: DropzoneTabProps) {
   const [files, setFiles] = useState<FileEntry[]>([])
   const [loading, setLoading] = useState(false)
+  const [progress, setProgress] = useState(0)
 
   const onDrop = useCallback(async (accepted: File[]) => {
     if (accepted.length === 0) {
@@ -31,10 +46,21 @@ export function DropzoneTab({ collectionId, onImported }: DropzoneTabProps) {
       return
     }
 
-    setFiles(accepted.map((file) => ({
-      file,
-      name: extractSvgName(file.name),
-    })))
+    const entries = await Promise.all(
+      accepted.map(async (file): Promise<FileEntry> => {
+        try {
+          const svgContent = isSvgFile(file)
+            ? sanitizeSvg(await file.text())
+            : isIcnsFile(file)
+              ? await icnsFileToSvgContent(file)
+              : await rasterFileToSvgContent(file)
+          return { name: extractSvgName(file.name), svgContent, status: 'pending' }
+        } catch {
+          return { name: file.name, svgContent: '', status: 'error', error: 'Invalid file' }
+        }
+      })
+    )
+    setFiles(entries)
   }, [])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -44,14 +70,29 @@ export function DropzoneTab({ collectionId, onImported }: DropzoneTabProps) {
   })
 
   async function handleImport() {
-    if (files.length === 0) return
+    const valid = files.filter((f) => f.status === 'pending' && f.svgContent)
+    if (valid.length === 0) return
 
     setLoading(true)
-    try {
-      await runDirectImport(files.map((entry) => entry.file), collectionId, onImported)
-    } finally {
-      setLoading(false)
+    setProgress(0)
+
+    const items: ImportItem[] = valid.map((f) => ({
+      name: f.name,
+      svgContent: f.svgContent,
+      collectionId: collectionId,
+      source: 'upload' as const,
+    }))
+
+    const result = await importIcons(items)
+    setLoading(false)
+    setProgress(100)
+
+    if (result.imported > 0) {
+      toast.success(`Imported ${result.imported} icon${result.imported > 1 ? 's' : ''}`)
+      onImported(result.icons)
     }
+    if (result.skipped > 0) toast.info(`Skipped ${result.skipped} duplicate${result.skipped > 1 ? 's' : ''}`)
+    if (result.errors.length > 0) toast.error(`${result.errors.length} error${result.errors.length > 1 ? 's' : ''}`)
   }
 
   return (
@@ -80,13 +121,19 @@ export function DropzoneTab({ collectionId, onImported }: DropzoneTabProps) {
               <div key={i} className="flex items-center gap-2 text-sm py-1">
                 <FileIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                 <span className="flex-1 truncate">{file.name}</span>
+                {file.status === 'error' && (
+                  <span className="text-xs text-destructive">{file.error}</span>
+                )}
+                {file.status === 'done' && <CheckCircle className="h-3.5 w-3.5 text-green-500" />}
               </div>
             ))}
           </div>
 
+          {loading && <ProgressBar value={progress} />}
+
           <div className="flex items-center justify-between pt-1">
             <span className="text-xs text-muted-foreground">
-              {files.length} file{files.length !== 1 ? 's' : ''} ready
+              {files.filter((f) => f.status === 'pending').length} file{files.filter((f) => f.status === 'pending').length !== 1 ? 's' : ''} ready
             </span>
             <div className="flex gap-2">
               <Button
@@ -101,10 +148,10 @@ export function DropzoneTab({ collectionId, onImported }: DropzoneTabProps) {
                 size="sm"
                 className="h-7 text-xs"
                 onClick={handleImport}
-                disabled={loading || files.length === 0}
+                disabled={loading || files.filter((f) => f.status === 'pending').length === 0}
               >
                 {loading && <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />}
-                Import {files.length} icons
+                Import {files.filter((f) => f.status === 'pending').length} icons
               </Button>
             </div>
           </div>

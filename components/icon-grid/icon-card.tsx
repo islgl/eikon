@@ -10,7 +10,6 @@ import { copyToClipboard, downloadSvg, downloadPng } from '@/lib/utils/copy'
 import { isRasterWrappedSvg } from '@/lib/utils/svg'
 import { toggleFavorite, deleteIcons, getIconSignedUrl, updateIcon } from '@/actions/icons'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { IconPreview } from './icon-preview'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -33,7 +32,7 @@ type IconCardProps = {
 export function IconCard({ icon, size, selected, active, onSelect, onOpenDetail, onUpdate, onRemove }: IconCardProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: icon.id,
-    data: { name: icon.name, updatedAt: icon.updated_at },
+    data: { name: icon.name, svgContent: icon.svg_content },
   })
 
   const [hovered, setHovered] = useState(false)
@@ -123,11 +122,10 @@ export function IconCard({ icon, size, selected, active, onSelect, onOpenDetail,
 
         {/* SVG preview — centered in remaining space */}
         <div className="flex-1 flex items-center justify-center min-h-0">
-          <IconPreview
-            iconId={icon.id}
-            updatedAt={icon.updated_at}
-            className="text-foreground"
+          <div
             style={{ width: size, height: size }}
+            className="icon-preview text-foreground"
+            dangerouslySetInnerHTML={{ __html: icon.svg_content }}
           />
         </div>
 

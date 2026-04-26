@@ -11,31 +11,6 @@ export const ACCEPTED_IMAGE_TYPES = {
 
 export const ACCEPTED_EXTENSIONS_LABEL = 'SVG, PNG, JPG, WebP, GIF, ICO, ICNS'
 
-const ACCEPTED_MIME_TYPES = new Set(Object.keys(ACCEPTED_IMAGE_TYPES))
-const ACCEPTED_EXTENSIONS = new Set(
-  Object.values(ACCEPTED_IMAGE_TYPES)
-    .flat()
-    .map((extension) => extension.toLowerCase())
-)
-
-export function isAcceptedImageFile(file: Pick<File, 'name' | 'type'>): boolean {
-  const type = file.type.toLowerCase()
-
-  if (type && ACCEPTED_MIME_TYPES.has(type)) {
-    return true
-  }
-
-  const lowerName = file.name.toLowerCase()
-
-  for (const extension of ACCEPTED_EXTENSIONS) {
-    if (lowerName.endsWith(extension)) {
-      return true
-    }
-  }
-
-  return false
-}
-
 export function isSvgFile(file: File): boolean {
   return file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg')
 }

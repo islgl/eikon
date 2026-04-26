@@ -8,7 +8,6 @@ import { snapCenterToCursor } from '@dnd-kit/modifiers'
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { Sidebar } from './sidebar'
 import { CommandPalette } from '@/components/command/command-palette'
-import { IconPreview } from '@/components/icon-grid/icon-preview'
 import { useCommandPalette } from '@/lib/hooks/use-command'
 import { useCollections } from '@/lib/hooks/use-collections'
 import { DndMoveProvider, useDndMove } from '@/lib/hooks/use-dnd-move'
@@ -30,7 +29,7 @@ export function AppShell(props: AppShellProps) {
 
 function AppShellInner({ collections, tags, user, children }: AppShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [activeDrag, setActiveDrag] = useState<{ id: string; name: string; updatedAt: string | null } | null>(null)
+  const [activeDrag, setActiveDrag] = useState<{ id: string; name: string; svgContent: string } | null>(null)
   const { open: cmdOpen, setOpen: setCmdOpen } = useCommandPalette()
   const collectionState = useCollections(collections)
   const { move } = useDndMove()
@@ -40,8 +39,8 @@ function AppShellInner({ collections, tags, user, children }: AppShellProps) {
   )
 
   function handleDragStart(e: DragStartEvent) {
-    const data = e.active.data.current as { name: string; updatedAt?: string | null } | undefined
-    setActiveDrag({ id: String(e.active.id), name: data?.name ?? '', updatedAt: data?.updatedAt ?? null })
+    const data = e.active.data.current as { name: string; svgContent: string } | undefined
+    setActiveDrag({ id: String(e.active.id), name: data?.name ?? '', svgContent: data?.svgContent ?? '' })
   }
 
   function handleDragEnd(e: DragEndEvent) {
@@ -78,11 +77,10 @@ function AppShellInner({ collections, tags, user, children }: AppShellProps) {
       <DragOverlay dropAnimation={null}>
         {activeDrag && (
           <div className="flex flex-col items-center gap-2 rounded-xl bg-background/90 backdrop-blur-sm shadow-2xl ring-1 ring-black/5 pointer-events-none px-3 pt-3 pb-2.5">
-            <IconPreview
-              iconId={activeDrag.id}
-              updatedAt={activeDrag.updatedAt}
-              className="text-foreground"
+            <div
+              className="icon-preview text-foreground"
               style={{ width: 36, height: 36 }}
+              dangerouslySetInnerHTML={{ __html: activeDrag.svgContent }}
             />
             <span className="text-[10px] text-muted-foreground max-w-20 truncate leading-none">
               {activeDrag.name}
