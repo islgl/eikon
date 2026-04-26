@@ -34,7 +34,7 @@ const COPY_FORMATS: { format: CopyFormat; label: string }[] = [
   { format: 'data-uri', label: 'Data URI' },
 ]
 
-const PNG_SIZES = [16, 24, 32, 48, 64, 128]
+const PNG_SIZES = [128, 256, 512]
 
 export function IconDetailPanel({ icon, onClose, onUpdate }: IconDetailPanelProps) {
   const [editing, setEditing] = useState(false)
