@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Changed
+- PNG export sizes simplified to 128 / 256 / 512 px
+
 ### Added
 - Drag image files directly onto the icon grid to import — no Import button needed
 - Infinite scroll pagination: initial load capped at 100 icons, more loaded automatically on scroll
