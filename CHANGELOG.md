@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- Build error: moved `ICONS_PAGE_SIZE` constant out of `use server` file (only async functions may be exported from server action files)
+
 ### Changed
 - PNG export sizes simplified to 128 / 256 / 512 px
 
